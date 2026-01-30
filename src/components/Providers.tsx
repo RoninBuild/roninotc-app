@@ -24,4 +24,4 @@ export function Providers({ children }: { children: React.ReactNode }) {
       </QueryClientProvider>
     </WagmiProvider>
   )
-}
+}1

@@ -38,15 +38,15 @@ export default function DealPage() {
 
   const getStatusEmoji = (status: string) => {
     const map: Record<string, string> = {
-      draft: '',
-      created: '',
-      funded: '',
-      released: '',
-      refunded: '',
-      disputed: '',
-      resolved: '',
+      draft: '⏳',
+      created: '📝',
+      funded: '✅',
+      released: '💸',
+      refunded: '↩️',
+      disputed: '⚠️',
+      resolved: '✔️',
     }
-    return map[status] || ''
+    return map[status] || '❓'
   }
 
   const getStatusColor = (status: string) => {
@@ -69,7 +69,7 @@ export default function DealPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-pulse"></div>
+          <div className="text-6xl mb-4 animate-pulse">⚔️</div>
           <p className="text-gray-400">Loading deal...</p>
         </div>
       </div>
@@ -80,10 +80,10 @@ export default function DealPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4"></div>
+          <div className="text-6xl mb-4">❌</div>
           <p className="text-xl text-red-500 mb-4">{error || 'Deal not found'}</p>
           <Link href="/" className="text-neon-purple hover:underline">
-             Back to home
+            ← Back to home
           </Link>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function DealPage() {
       <header className="border-b border-neon-purple/20 bg-black/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="text-3xl"></div>
+            <div className="text-3xl">⚔️</div>
             <h1 className="text-2xl font-bold glow-text">RoninOTC</h1>
           </Link>
           <ConnectButton />
@@ -147,7 +147,7 @@ export default function DealPage() {
 
         <div className="neon-box rounded-xl p-6 space-y-4">
           <h3 className="text-xl font-bold">Actions</h3>
-          
+
           {deal.status === 'draft' && (
             <div className="space-y-3">
               <p className="text-sm text-gray-400">This deal has not been created on-chain yet.</p>
@@ -199,7 +199,7 @@ export default function DealPage() {
 
           {(deal.status === 'released' || deal.status === 'refunded') && (
             <div className="text-center py-4">
-              <p className="text-lg font-bold text-green-500"> Deal Completed</p>
+              <p className="text-lg font-bold text-green-500">✅ Deal Completed</p>
             </div>
           )}
         </div>
@@ -228,7 +228,7 @@ export default function DealPage() {
             {deal.escrow_address && (
               <div className="flex justify-between">
                 <span className="text-gray-400">Escrow Contract</span>
-                <a 
+                <a
                   href={`https://basescan.org/address/${deal.escrow_address}`}
                   target="_blank"
                   rel="noopener noreferrer"
