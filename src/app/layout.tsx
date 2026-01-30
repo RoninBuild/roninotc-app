@@ -1,9 +1,9 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { Space_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/Providers'
 
-const spaceMono = Space_Mono({
+const spaceMono = Space_Mono({ 
   weight: ['400', '700'],
   subsets: ['latin'],
   variable: '--font-space-mono',
@@ -20,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${spaceMono.variable} antialiased bg-[#0a0a0f]`}>
+    <html lang=\"en\" className=\"dark\">
+      <body className={` antialiased bg-[#0a0a0f]`}>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -19,7 +19,7 @@ export default function Home() {
       <header className="border-b border-neon-purple/20 bg-black/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="text-3xl">⚔️</div>
+            <div className="text-3xl"></div>
             <h1 className="text-2xl font-bold glow-text">RoninOTC</h1>
           </div>
           <ConnectButton />
@@ -29,7 +29,7 @@ export default function Home() {
       <main className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-2xl w-full text-center space-y-8">
           <div className="animate-float mb-8">
-            <div className="text-8xl mb-4">⚔️</div>
+            <div className="text-8xl mb-4"></div>
             <h2 className="text-5xl font-bold mb-4 glow-text">
               Trustless OTC Escrow
             </h2>
@@ -61,17 +61,17 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
             <div className="neon-box rounded-lg p-6">
-              <div className="text-3xl mb-2">🔒</div>
+              <div className="text-3xl mb-2"></div>
               <h3 className="font-bold mb-2">Secure</h3>
               <p className="text-sm text-gray-400">Smart contract escrow on Base</p>
             </div>
             <div className="neon-box rounded-lg p-6">
-              <div className="text-3xl mb-2">⚡</div>
+              <div className="text-3xl mb-2"></div>
               <h3 className="font-bold mb-2">Fast</h3>
               <p className="text-sm text-gray-400">Instant settlement with USDC</p>
             </div>
             <div className="neon-box rounded-lg p-6">
-              <div className="text-3xl mb-2">🤝</div>
+              <div className="text-3xl mb-2"></div>
               <h3 className="font-bold mb-2">Trustless</h3>
               <p className="text-sm text-gray-400">No middleman required</p>
             </div>
@@ -89,7 +89,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-neon-purple/20 py-6 text-center text-sm text-gray-500">
-        <p>Built on Base • Powered by Towns</p>
+        <p>Built on Base  Powered by Towns</p>
       </footer>
     </div>
   )

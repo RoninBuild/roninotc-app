@@ -1,0 +1,33 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a0a0f;
+  --foreground: #ffffff;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .glow-text {
+    text-shadow: 0 0 10px rgba(123, 63, 242, 0.5);
+  }
+  
+  .glow-border {
+    box-shadow: 0 0 10px rgba(123, 63, 242, 0.3);
+  }
+  
+  .neon-box {
+    background: rgba(10, 10, 15, 0.8);
+    border: 1px solid rgba(123, 63, 242, 0.3);
+    box-shadow: 0 0 20px rgba(123, 63, 242, 0.1);
+  }
+}
