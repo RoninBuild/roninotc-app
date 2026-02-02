@@ -32,6 +32,7 @@ export default function DealClient({ dealId }: Props) {
     const { writeContract: fundEscrow, data: fundHash, isPending: isFunding } = useWriteContract()
     const { writeContract: releaseEscrow, data: releaseHash, isPending: isReleasing } = useWriteContract()
     const { writeContract: refundEscrow, data: refundHash, isPending: isRefunding } = useWriteContract()
+    const { writeContract: openDispute, data: disputeHash, isPending: isDisputing } = useWriteContract()
 
     // Transaction confirmations
     const { isLoading: isCreateConfirming, isSuccess: isCreateSuccess, data: createReceipt } = useWaitForTransactionReceipt({ hash: createHash })
@@ -39,6 +40,7 @@ export default function DealClient({ dealId }: Props) {
     const { isLoading: isFundConfirming, isSuccess: isFundSuccess } = useWaitForTransactionReceipt({ hash: fundHash })
     const { isLoading: isReleaseConfirming, isSuccess: isReleaseSuccess } = useWaitForTransactionReceipt({ hash: releaseHash })
     const { isLoading: isRefundConfirming, isSuccess: isRefundSuccess } = useWaitForTransactionReceipt({ hash: refundHash })
+    const { isLoading: isDisputeConfirming, isSuccess: isDisputeSuccess } = useWaitForTransactionReceipt({ hash: disputeHash })
 
     const isSeller = address?.toLowerCase() === deal?.seller_address?.toLowerCase()
     const isBuyer = address?.toLowerCase() === deal?.buyer_address?.toLowerCase()
@@ -85,7 +87,6 @@ export default function DealClient({ dealId }: Props) {
             } else {
                 setDeal(data)
                 setError(null)
-                // If API has escrow address, use it
                 if (data.escrow_address) {
                     setOnChainEscrow(data.escrow_address as `0x${string}`)
                 }
@@ -98,265 +99,171 @@ export default function DealClient({ dealId }: Props) {
         }
     }
 
-    // Sync blockchain state - the main function that keeps UI in sync with chain
+    // Sync blockchain state
     const syncBlockchainState = async () => {
         if (!deal) return
-
-        console.log('🔄 Syncing blockchain state...')
-
         try {
-            // Step 1: Check if escrow exists on-chain
             if (!onChainEscrow) {
                 let escrows: `0x${string}`[] | undefined;
-
-                // If buyer is viewing, check buyer list. If seller, check seller list.
                 if (deal.buyer_address) {
                     const result = await refetchBuyerEscrows()
                     escrows = result.data as `0x${string}`[] | undefined
                 }
-
                 if ((!escrows || escrows.length === 0) && deal.seller_address) {
                     const result = await refetchSellerEscrows()
                     escrows = result.data as `0x${string}`[] | undefined
                 }
-
                 if (escrows && escrows.length > 0) {
-                    // Start from the most recent
                     const sortedEscrows = [...escrows].reverse()
-
                     for (const escrowAddr of sortedEscrows) {
-                        console.log('✅ Found escrow on-chain matching role:', escrowAddr)
                         setOnChainEscrow(escrowAddr)
-
-                        // Update local deal state
                         setDeal(prev => prev ? { ...prev, escrow_address: escrowAddr, status: 'created' as Deal['status'] } : prev)
-
-                        // Try to update API in background
-                        try {
-                            await updateDealStatus(deal.deal_id, 'created', escrowAddr)
-                        } catch (e) {
-                            console.warn('API sync failed:', e)
-                        }
+                        try { await updateDealStatus(deal.deal_id, 'created', escrowAddr) } catch (e) { }
                         break;
                     }
                 }
             }
 
-            // Step 2: If we have escrow, read its on-chain status
             if (onChainEscrow) {
                 const infoResult = await refetchEscrowInfo()
-                const info = infoResult.data as readonly [string, string, string, bigint, bigint, string, string, number, bigint] | undefined
-
+                const info = infoResult.data as any
                 if (info) {
-                    const chainStatus = info[7] // _status field
-                    console.log('📊 On-chain status:', chainStatus)
-                    setOnChainStatus(chainStatus)
-
-                    // Map on-chain status to deal status
+                    const chainStatus = info[7]
                     const statusMap: Record<number, string> = {
-                        0: 'created',   // Unfunded
-                        1: 'funded',    // Funded
-                        2: 'released',  // Released
-                        3: 'refunded',  // Refunded
-                        4: 'disputed',  // Disputed
+                        0: 'created', 1: 'funded', 2: 'released', 3: 'refunded', 4: 'disputed',
                     }
-
                     const newStatus = statusMap[chainStatus] || 'created'
                     if (deal.status !== newStatus) {
-                        console.log(`🔄 Updating status: ${deal.status} → ${newStatus}`)
                         setDeal(prev => prev ? { ...prev, status: newStatus as Deal['status'] } : prev)
-
-                        // Try to update API
-                        try {
-                            await updateDealStatus(deal.deal_id, newStatus, onChainEscrow)
-                        } catch (e) {
-                            console.warn('API sync failed:', e)
-                        }
+                        try { await updateDealStatus(deal.deal_id, newStatus, onChainEscrow) } catch (e) { }
                     }
                 }
-
-                // Also refresh allowance
                 await refetchAllowance()
             }
-        } catch (err) {
-            console.error('Blockchain sync error:', err)
-        }
+        } catch (err) { console.error(err) }
     }
 
-    // Initial load
-    useEffect(() => {
-        loadDeal(true)
-    }, [dealId])
-
-    // Sync blockchain state when deal loads or escrow changes
-    useEffect(() => {
-        if (deal) {
-            syncBlockchainState()
-        }
-    }, [deal?.deal_id, deal?.buyer_address])
-
-    // Periodic blockchain sync (every 5 seconds)
+    useEffect(() => { loadDeal(true) }, [dealId])
+    useEffect(() => { if (deal) syncBlockchainState() }, [deal?.deal_id, deal?.buyer_address])
     useEffect(() => {
         if (!deal) return
-
-        const interval = setInterval(() => {
-            syncBlockchainState()
-        }, 5000)
-
+        const interval = setInterval(() => syncBlockchainState(), 5000)
         return () => clearInterval(interval)
     }, [deal, onChainEscrow])
 
-    // Handle Deal Creation Success - use blockchain verification
+    // Handle Deal Creation Success
     useEffect(() => {
         if (isCreateSuccess && createReceipt && deal) {
-            console.log('=== CREATE SUCCESS ===')
-            console.log('Receipt:', createReceipt)
-
             const handleSuccess = async () => {
-                setTxStatus('Transaction confirmed! Verifying on blockchain...')
-
-                // First try to extract from receipt logs
+                setTxStatus('Transaction confirmed! Verifying...')
                 for (const log of createReceipt.logs) {
                     if (log.address.toLowerCase() === FACTORY_ADDRESS.toLowerCase()) {
                         const escrowAddressTopic = log.topics[1]
                         if (escrowAddressTopic) {
                             const escrowAddress = `0x${escrowAddressTopic.slice(-40)}` as `0x${string}`
-                            console.log('Extracted escrow address:', escrowAddress)
-
-                            // Update local state immediately
                             setDeal(prev => prev ? { ...prev, status: 'created' as Deal['status'], escrow_address: escrowAddress } : prev)
-                            setTxStatus('Escrow created successfully!')
-
-                            // Try API update in background
-                            try {
-                                await updateDealStatus(deal.deal_id, 'created', escrowAddress)
-                            } catch (apiErr) {
-                                console.warn('API update failed, but escrow exists on blockchain:', apiErr)
-                            }
+                            setTxStatus('Success!')
+                            try { await updateDealStatus(deal.deal_id, 'created', escrowAddress) } catch (e) { }
                             return
                         }
                     }
                 }
-
-                // Fallback: trigger blockchain sync
-                console.log('Could not parse logs, triggering sync...')
-                setOnChainEscrow(null) // Force re-check
+                setOnChainEscrow(null)
                 await syncBlockchainState()
             }
             handleSuccess()
         }
     }, [isCreateSuccess, createReceipt, deal])
 
-
-    // Reload deal after other successful transactions
     useEffect(() => {
-        if (isFundSuccess || isReleaseSuccess || isRefundSuccess) {
+        if (isFundSuccess || isReleaseSuccess || isRefundSuccess || isDisputeSuccess) {
             setTimeout(() => syncBlockchainState(), 2000)
         }
-    }, [isFundSuccess, isReleaseSuccess, isRefundSuccess])
+    }, [isFundSuccess, isReleaseSuccess, isRefundSuccess, isDisputeSuccess])
 
     // === ACTION HANDLERS ===
 
+    const handleTx = async (fn: any, statusText: string) => {
+        try {
+            setTxStatus(statusText)
+            fn()
+        } catch (err) {
+            console.error(err)
+            setTxStatus('Transaction failed')
+            setTimeout(() => setTxStatus(null), 3000)
+        }
+    }
+
     const handleCreateEscrow = async () => {
         if (!deal || !address) return
-
-        // Prevent self-dealing deployment
         if (deal.seller_address.toLowerCase() === deal.buyer_address.toLowerCase()) {
-            setTxStatus('Error: Seller cannot be Buyer')
-            alert('Cannot deploy: Seller and Buyer addresses are the same.')
+            setTxStatus('Error: Self-dealing')
             return
         }
-
-        setTxStatus('Creating escrow on-chain...')
 
         const amount = parseUsdcAmount(deal.amount)
         const memoHash = keccak256(toHex(deal.deal_id))
 
-        try {
-            createEscrow({
-                address: FACTORY_ADDRESS,
-                abi: factoryAbi,
-                functionName: 'createEscrow',
-                args: [
-                    deal.seller_address as `0x${string}`,   // seller (arg 0)
-                    USDC_ADDRESS,                           // token (USDC)
-                    amount,                                 // amount in USDC (6 decimals)
-                    BigInt(deal.deadline),                 // deadline timestamp
-                    zeroAddress,                           // arbiter (none for now)
-                    memoHash,                              // memo hash
-                ],
-            })
-        } catch (err) {
-            console.error('Create escrow error:', err)
-            setTxStatus('Failed to create escrow')
-        }
+        handleTx(() => createEscrow({
+            address: FACTORY_ADDRESS,
+            abi: factoryAbi,
+            functionName: 'createEscrow',
+            args: [
+                deal.seller_address as `0x${string}`,
+                USDC_ADDRESS,
+                amount,
+                BigInt(deal.deadline),
+                zeroAddress,
+                memoHash,
+            ],
+        }), 'Creating escrow...')
     }
 
     const handleApproveUsdc = async () => {
         if (!deal?.escrow_address) return
-        setTxStatus('Approving USDC spend...')
-
         const amount = parseUsdcAmount(deal.amount)
-
-        try {
-            approveUsdc({
-                address: USDC_ADDRESS,
-                abi: erc20Abi,
-                functionName: 'approve',
-                args: [deal.escrow_address as `0x${string}`, amount],
-            })
-        } catch (err) {
-            console.error('Approve error:', err)
-            setTxStatus('Failed to approve USDC')
-        }
+        handleTx(() => approveUsdc({
+            address: USDC_ADDRESS,
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [deal.escrow_address as `0x${string}`, amount],
+        }), 'Approving USDC...')
     }
 
     const handleFundEscrow = async () => {
         if (!deal?.escrow_address) return
-        setTxStatus('Funding escrow...')
-
-        try {
-            fundEscrow({
-                address: deal.escrow_address as `0x${string}`,
-                abi: escrowAbi,
-                functionName: 'fund',
-            })
-        } catch (err) {
-            console.error('Fund error:', err)
-            setTxStatus('Failed to fund escrow')
-        }
+        handleTx(() => fundEscrow({
+            address: deal.escrow_address as `0x${string}`,
+            abi: escrowAbi,
+            functionName: 'fund',
+        }), 'Funding escrow...')
     }
 
     const handleReleaseFunds = async () => {
         if (!deal?.escrow_address) return
-        setTxStatus('Releasing funds to seller...')
-
-        try {
-            releaseEscrow({
-                address: deal.escrow_address as `0x${string}`,
-                abi: escrowAbi,
-                functionName: 'release',
-            })
-        } catch (err) {
-            console.error('Release error:', err)
-            setTxStatus('Failed to release funds')
-        }
+        handleTx(() => releaseEscrow({
+            address: deal.escrow_address as `0x${string}`,
+            abi: escrowAbi,
+            functionName: 'release',
+        }), 'Releasing funds...')
     }
 
     const handleRefund = async () => {
         if (!deal?.escrow_address) return
-        setTxStatus('Processing refund...')
+        handleTx(() => refundEscrow({
+            address: deal.escrow_address as `0x${string}`,
+            abi: escrowAbi,
+            functionName: 'refundAfterDeadline',
+        }), 'Processing refund...')
+    }
 
-        try {
-            refundEscrow({
-                address: deal.escrow_address as `0x${string}`,
-                abi: escrowAbi,
-                functionName: 'refundAfterDeadline',
-            })
-        } catch (err) {
-            console.error('Refund error:', err)
-            setTxStatus('Failed to refund')
-        }
+    const handleDispute = async () => {
+        if (!deal?.escrow_address) return
+        handleTx(() => openDispute({
+            address: deal.escrow_address as `0x${string}`,
+            abi: escrowAbi,
+            functionName: 'openDispute',
+        }), 'Opening dispute...')
     }
 
     // === HELPER FUNCTIONS ===
@@ -448,45 +355,47 @@ export default function DealClient({ dealId }: Props) {
                 </div>
             </header>
 
-            <main className="relative z-10 max-w-6xl mx-auto px-6 py-12 space-y-10 animate-[fadeIn_0.8s_ease-out]">
+            <main className="relative z-10 max-w-5xl mx-auto px-6 py-12 space-y-8 animate-[fadeIn_0.8s_ease-out]">
 
                 {/* Transaction Status Banner */}
                 {isAnyTxPending && (
-                    <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-[#A855F7] text-white px-8 py-4 rounded-2xl shadow-[0_0_40px_rgba(168,85,247,0.4)] flex items-center gap-4 animate-[slideUp_0.3s_ease-out]">
+                    <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-[#A855F7] text-white px-8 py-3 rounded-lg shadow-[0_0_40px_rgba(168,85,247,0.4)] flex items-center gap-4 animate-[slideUp_0.3s_ease-out]">
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span className="font-black uppercase tracking-widest text-xs">{txStatus || 'Processing transaction...'}</span>
+                        <span className="font-black uppercase tracking-widest text-xs">{txStatus || 'Processing...'}</span>
                     </div>
                 )}
 
-                {/* Status Header Card - Extra Thick Glassmorphism */}
+                {/* Status Header Card - Squared & Shimmer Border */}
                 <div className="relative group animate-[slideUp_0.6s_ease-out]">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-[#A855F7]/30 to-blue-600/30 rounded-3xl blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000" />
-                    <div className="relative bg-[#050505]/90 backdrop-blur-3xl border-2 border-white/15 rounded-3xl p-10 overflow-hidden">
+                    <div className="absolute -inset-[2px] rounded-xl border-glow blur-[2px] opacity-40 group-hover:opacity-80 transition-opacity duration-700" />
+                    <div className="relative bg-[#050505] rounded-[10px] p-8 overflow-hidden border border-white/10">
                         <div className="flex items-center justify-between flex-wrap gap-8">
-                            <div className="flex flex-col gap-2">
-                                <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-white uppercase leading-none">
-                                    Deal <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-[#A855F7]/50">Summary</span>
+                            <div className="flex flex-col gap-3">
+                                <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white uppercase leading-none">
+                                    DEAL SUMMARY
                                 </h1>
                                 <div className="flex items-center gap-3">
-                                    <p className="font-mono text-xs text-secondary tracking-widest break-all bg-white/5 py-1.5 px-3 rounded-lg border border-white/5">{deal.deal_id}</p>
+                                    <p className="font-mono text-xl text-shimmer font-bold tracking-tight break-all">
+                                        {deal.deal_id}
+                                    </p>
                                     <button
                                         onClick={() => {
                                             navigator.clipboard.writeText(deal.deal_id);
                                             setTxStatus('ID copied!');
                                             setTimeout(() => setTxStatus(null), 2000);
                                         }}
-                                        className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white border border-transparent hover:border-white/10"
+                                        className="p-2 bg-white/5 hover:bg-white/10 rounded-md transition-all text-secondary hover:text-white border border-white/10"
                                         title="Copy ID"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
                                         </svg>
                                     </button>
                                 </div>
                             </div>
-                            <div className={`flex items-center gap-4 px-8 py-5 rounded-2xl border-2 shadow-2xl transition-all duration-500 ${statusConfig.bg}`}>
-                                <span className="text-4xl filter drop-shadow-md">{statusConfig.emoji}</span>
-                                <span className={`font-black text-xl uppercase tracking-tighter ${statusConfig.color}`}>
+                            <div className={`flex items-center gap-4 px-10 py-5 rounded-lg border-2 shadow-2xl transition-all duration-500 ${statusConfig.bg}`}>
+                                <span className="text-3xl">{statusConfig.emoji}</span>
+                                <span className={`font-black text-2xl uppercase tracking-tighter ${statusConfig.color}`}>
                                     {deal.status}
                                 </span>
                             </div>
@@ -498,62 +407,67 @@ export default function DealClient({ dealId }: Props) {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
                     {/* Participants Card */}
-                    <div className="bg-[#050505]/80 backdrop-blur-2xl border-2 border-white/10 rounded-3xl p-8 hover:border-[#A855F7]/40 transition-all duration-500 group animate-[slideUp_0.8s_ease-out]">
-                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-8 flex items-center gap-3">
-                            <span className="p-2 bg-[#A855F7]/10 rounded-xl">👥</span> Participants
-                        </h3>
-                        <div className="space-y-6">
-                            <div className="relative p-6 bg-white/5 rounded-2xl border-2 border-white/5 group-hover:bg-white/[0.07] transition-all">
-                                <label className="text-[10px] text-[#A855F7] uppercase tracking-[0.2em] mb-3 block font-black">Seller</label>
-                                <p className="font-mono text-sm text-white break-all leading-relaxed">{deal.seller_address}</p>
-                                {isSeller && (
-                                    <span className="absolute top-6 right-6 text-[10px] px-3 py-1 bg-[#A855F7]/30 text-white rounded-full font-black uppercase tracking-widest">
-                                        You
-                                    </span>
-                                )}
-                            </div>
-                            <div className="relative p-6 bg-white/5 rounded-2xl border-2 border-white/5 group-hover:bg-white/[0.07] transition-all">
-                                <label className="text-[10px] text-blue-400 uppercase tracking-[0.2em] mb-3 block font-black">Buyer</label>
-                                <p className="font-mono text-sm text-white break-all leading-relaxed">{deal.buyer_address}</p>
-                                {isBuyer && (
-                                    <span className="absolute top-6 right-6 text-[10px] px-3 py-1 bg-blue-500/30 text-white rounded-full font-black uppercase tracking-widest">
-                                        You
-                                    </span>
-                                )}
+                    <div className="relative group animate-[slideUp_0.8s_ease-out]">
+                        <div className="absolute -inset-[2px] rounded-xl border-glow blur-sm opacity-20 group-hover:opacity-40 transition-opacity duration-700" />
+                        <div className="relative bg-[#050505] rounded-[10px] p-6 border border-white/10 h-full">
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">
+                                PARTICIPANTS
+                            </h3>
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] text-purple-400 uppercase tracking-[0.3em] font-black opacity-70 ml-1">SELLER</label>
+                                    <div className="relative p-5 bg-white/[0.03] rounded-lg border border-white/5 flex items-center justify-between gap-4">
+                                        <p className="font-mono text-lg text-shimmer font-bold break-all leading-none">{deal.seller_address}</p>
+                                        {isSeller && (
+                                            <span className="text-[9px] px-2 py-1 bg-purple-500/20 text-purple-300 rounded border border-purple-500/30 font-black uppercase tracking-widest whitespace-nowrap">YOU</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] text-blue-400 uppercase tracking-[0.3em] font-black opacity-70 ml-1">BUYER</label>
+                                    <div className="relative p-5 bg-white/[0.03] rounded-lg border border-white/5 flex items-center justify-between gap-4">
+                                        <p className="font-mono text-lg text-shimmer font-bold break-all leading-none">{deal.buyer_address}</p>
+                                        {isBuyer && (
+                                            <span className="text-[9px] px-2 py-1 bg-blue-500/20 text-blue-300 rounded border border-blue-500/30 font-black uppercase tracking-widest whitespace-nowrap">YOU</span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Deal Details Card */}
-                    <div className="bg-[#050505]/80 backdrop-blur-2xl border-2 border-white/10 rounded-3xl p-8 hover:border-blue-500/40 transition-all duration-500 group animate-[slideUp_1s_ease-out]">
-                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-8 flex items-center gap-3">
-                            <span className="p-2 bg-blue-500/10 rounded-xl">💰</span> Asset Info
-                        </h3>
-                        <div className="space-y-6">
-                            <div className="p-8 bg-gradient-to-br from-white/5 to-white/[0.02] rounded-2xl border-2 border-white/5 group-hover:border-white/10 transition-all">
-                                <label className="text-[10px] text-secondary uppercase tracking-[0.2em] mb-4 block font-black">Total Value</label>
-                                <div className="flex items-baseline gap-3">
-                                    <span className="text-6xl font-black tracking-tighter text-white">
-                                        {deal.amount}
-                                    </span>
-                                    <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#A855F7] to-blue-500 uppercase">
-                                        {deal.token}
-                                    </span>
+                    <div className="relative group animate-[slideUp_1s_ease-out]">
+                        <div className="absolute -inset-[2px] rounded-xl border-glow blur-sm opacity-20 group-hover:opacity-40 transition-opacity duration-700" />
+                        <div className="relative bg-[#050505] rounded-[10px] p-6 border border-white/10 h-full">
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">
+                                ASSET INFO
+                            </h3>
+                            <div className="space-y-6">
+                                <div className="p-6 bg-white/[0.03] rounded-lg border border-white/5">
+                                    <label className="text-[10px] text-secondary uppercase tracking-[0.3em] mb-3 block font-black opacity-70">TOTAL VALUE</label>
+                                    <div className="flex items-baseline gap-3">
+                                        <span className="text-5xl font-black tracking-tighter text-shimmer">
+                                            {deal.amount}
+                                        </span>
+                                        <span className="text-xl font-black text-white/40 uppercase tracking-widest">
+                                            {deal.token}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="p-6 bg-white/5 rounded-2xl border-2 border-white/5">
-                                    <label className="text-[10px] text-secondary uppercase tracking-[0.2em] mb-3 block font-black">Deadline</label>
-                                    <p className={`text-xl font-black tracking-tighter ${isDeadlinePassed ? 'text-red-500' : 'text-white'}`}>
-                                        {deadlineDate.toLocaleDateString([], { day: '2-digit', month: 'short' })}
-                                    </p>
-                                    <p className="text-[10px] font-mono text-secondary mt-1 uppercase">{deadlineDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                </div>
-                                <div className="p-6 bg-white/5 rounded-2xl border-2 border-white/5">
-                                    <label className="text-[10px] text-secondary uppercase tracking-[0.2em] mb-3 block font-black">Blockchain</label>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                                        <p className="text-xl font-black tracking-tighter text-white uppercase">Base</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-white/[0.02] rounded-lg border border-white/5">
+                                        <label className="text-[10px] text-secondary uppercase tracking-[0.3em] mb-2 block font-black opacity-70">DEADLINE</label>
+                                        <p className={`text-lg font-black tracking-tighter ${isDeadlinePassed ? 'text-red-500' : 'text-white'}`}>
+                                            {deadlineDate.toLocaleDateString([], { day: '2-digit', month: 'short' })}
+                                        </p>
+                                    </div>
+                                    <div className="p-4 bg-white/[0.02] rounded-lg border border-white/5">
+                                        <label className="text-[10px] text-secondary uppercase tracking-[0.3em] mb-2 block font-black opacity-70">NETWORK</label>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                                            <p className="text-lg font-black tracking-tighter text-white uppercase leading-none">BASE</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -562,140 +476,141 @@ export default function DealClient({ dealId }: Props) {
                 </div>
 
                 {/* Description - Full Width Glass */}
-                <div className="bg-[#050505]/80 backdrop-blur-2xl border-2 border-white/10 rounded-3xl p-10 animate-[fadeIn_1.2s_ease-out]">
-                    <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-3">
-                        <span className="p-2 bg-yellow-500/10 rounded-xl">📋</span> Terms & Notes
-                    </h3>
-                    <p className="text-xl text-secondary leading-relaxed font-medium tracking-tight">
-                        {deal.description || "No specific terms provided for this deal."}
-                    </p>
+                <div className="relative group animate-[fadeIn_1.2s_ease-out]">
+                    <div className="absolute -inset-[1px] rounded-xl border-glow opacity-10" />
+                    <div className="relative bg-[#050505] rounded-[10px] p-8 border border-white/10">
+                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-4 opacity-40">
+                            TERMS & NOTES
+                        </h3>
+                        <p className="text-lg text-secondary leading-relaxed font-medium tracking-tight">
+                            {deal.description || "No specific terms provided."}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Actions - The Prime Section */}
                 <div className="relative group animate-[slideUp_1.4s_ease-out]">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-[#A855F7]/20 to-blue-600/20 rounded-[2.5rem] blur-2xl opacity-50 group-hover:opacity-10 transition duration-700" />
-                    <div className="relative bg-[#050505]/95 backdrop-blur-3xl border-2 border-white/20 rounded-[2rem] p-10 shadow-3xl">
-                        <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-8 flex items-center gap-3">
-                            <span className="p-2 bg-green-500/10 rounded-xl">⚡</span> Execution
+                    <div className="absolute -inset-[2px] rounded-2xl border-glow blur-sm opacity-20 group-hover:opacity-40 transition-opacity duration-700" />
+                    <div className="relative bg-[#050505] rounded-xl p-10 border border-white/20">
+                        <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">
+                            EXECUTION
                         </h3>
 
-                        {/* DRAFT: Buyer creates escrow on-chain */}
+                        {/* 1. DRAFT: Buyer needs to deploy the contract */}
                         {deal.status === 'draft' && (
                             <div className="space-y-8">
-                                <div className="p-6 bg-yellow-500/5 border-2 border-yellow-500/20 rounded-2xl flex items-center gap-6">
-                                    <span className="text-3xl">⚠️</span>
-                                    <p className="text-yellow-300 text-sm font-black uppercase tracking-tight">
-                                        Action Required: The BUYER must initialize the trustless contract on-chain to secure the deal.
-                                    </p>
-                                </div>
-
-                                {!address && (
-                                    <div className="text-center py-12 border-2 border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-                                        <p className="text-secondary font-black uppercase tracking-[0.25em] text-xs mb-8">Authorizing Required</p>
-                                        <div className="inline-block transform hover:scale-105 transition-transform">
-                                            <ConnectButton />
-                                        </div>
+                                <p className="text-secondary text-lg font-medium leading-relaxed italic opacity-80 max-w-2xl">
+                                    "Initialize the secure escrow contract on-chain to proceed with the transaction."
+                                </p>
+                                {!address ? (
+                                    <div className="p-8 border-2 border-dashed border-white/10 rounded-lg bg-white/[0.02] flex flex-col items-center gap-6">
+                                        <p className="text-[10px] text-secondary font-black uppercase tracking-[0.3em]">AUTHORIZATION REQUIRED</p>
+                                        <ConnectButton />
                                     </div>
-                                )}
-
-                                {address && isBuyer && (
-                                    <div className="space-y-4">
-                                        <button
-                                            onClick={handleCreateEscrow}
-                                            disabled={isAnyTxPending || isCheckingBlockchain}
-                                            className="w-full py-6 px-10 bg-white text-black hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed font-black text-xl uppercase tracking-[0.15em] rounded-2xl transition-all shadow-[0_0_50px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)] flex items-center justify-center gap-4"
-                                        >
-                                            {isCreating || isCheckingBlockchain ? (
-                                                <div className="w-6 h-6 border-4 border-black/20 border-t-black rounded-full animate-spin" />
-                                            ) : "🚀 Deploy Trustless Contract"}
-                                        </button>
-                                    </div>
-                                )}
-
-                                {address && isSeller && !isBuyer && (
-                                    <div className="p-8 bg-blue-500/5 border-2 border-blue-500/10 rounded-2xl text-center">
-                                        <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-6" />
-                                        <p className="text-blue-300 font-black uppercase tracking-widest text-xs">
-                                            Awaiting Buyer to initialize contract...
-                                        </p>
+                                ) : isBuyer ? (
+                                    <button
+                                        onClick={handleCreateEscrow}
+                                        disabled={isAnyTxPending}
+                                        className="w-full bg-[#A855F7] hover:bg-[#9333ea] disabled:opacity-50 text-white font-black py-5 rounded-lg text-xl uppercase tracking-tighter shadow-[0_0_30px_rgba(168,85,247,0.3)] transition-all border-2 border-white/20"
+                                    >
+                                        {isAnyTxPending ? 'INITIALIZING...' : 'DEPLOY ESCROW CONTRACT'}
+                                    </button>
+                                ) : (
+                                    <div className="p-8 bg-white/[0.02] border border-white/10 rounded-lg text-center">
+                                        <p className="text-secondary font-black uppercase tracking-widest text-xs">Awaiting buyer to initialize contract...</p>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* CREATED: Buyer approves + deposits */}
-                        {deal.status === 'created' && deal.escrow_address && (
+                        {/* 2. CREATED: Unfunded. Buyer needs to approve & deposit */}
+                        {deal.status === 'created' && (
                             <div className="space-y-8">
-                                <div className="p-6 bg-blue-500/5 border-2 border-blue-500/20 rounded-2xl">
+                                <div className="p-6 bg-blue-500/5 border border-blue-500/20 rounded-lg">
                                     <p className="text-blue-300 text-sm font-black uppercase tracking-tight">
-                                        Contract ready. Buyer must now fund the escrow with <span className="text-white">{deal.amount} USDC</span>.
+                                        Protocol ready. Please authorize and deposit <span className="text-white">{deal.amount} {deal.token}</span>.
                                     </p>
                                 </div>
-
-                                {address && isBuyer && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {isBuyer ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <button
                                             onClick={handleApproveUsdc}
                                             disabled={isAnyTxPending || !needsApproval}
-                                            className="py-6 px-8 border-2 border-white/20 text-white font-black text-lg uppercase tracking-widest rounded-2xl hover:bg-white/10 disabled:opacity-50 transition-all flex items-center justify-center gap-4"
+                                            className={`py-5 px-8 border-2 font-black text-lg uppercase tracking-widest rounded-lg transition-all ${!needsApproval ? 'border-green-500/50 text-green-500 bg-green-500/5' : 'border-white/20 text-white hover:bg-white/5'}`}
                                         >
-                                            {isApproving ? <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" /> : !needsApproval ? "✅ USDC READY" : "🔓 ALLOW $USDC"}
+                                            {!needsApproval ? '✅ ALLOWED' : '1. ALLOW USDC'}
                                         </button>
                                         <button
                                             onClick={handleFundEscrow}
                                             disabled={isAnyTxPending || needsApproval}
-                                            className="py-6 px-8 bg-gradient-to-r from-[#A855F7] to-blue-600 hover:from-[#A855F7]/90 hover:to-blue-600/90 disabled:opacity-50 text-white font-black text-lg uppercase tracking-widest rounded-2xl transition-all shadow-[0_0_40px_rgba(168,85,247,0.2)] flex items-center justify-center gap-4"
+                                            className="py-5 px-8 bg-white text-black hover:bg-gray-200 disabled:opacity-50 font-black text-lg uppercase tracking-widest rounded-lg transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)]"
                                         >
-                                            {isFunding ? <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" /> : "💰 DEPOSIT FUNDS"}
+                                            {isFunding ? 'FUNDING...' : '2. DEPOSIT FUNDS'}
                                         </button>
                                     </div>
-                                )}
-
-                                {address && isSeller && !isBuyer && (
-                                    <div className="text-center py-10 bg-white/[0.02] border-2 border-dashed border-white/10 rounded-2xl">
-                                        <p className="text-secondary font-black uppercase tracking-widest text-xs">Waiting for Buyer Deposit...</p>
+                                ) : (
+                                    <div className="p-8 bg-white/[0.02] border border-white/10 rounded-lg text-center">
+                                        <p className="text-secondary font-black uppercase tracking-widest text-xs">Waiting for buyer to deposit funds...</p>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* FUNDED: Buyer releases */}
-                        {deal.status === 'funded' && deal.escrow_address && (
-                            <div className="space-y-8 text-center py-6">
-                                <div className="p-8 bg-green-500/5 border-2 border-green-500/20 rounded-2xl mb-8">
-                                    <p className="text-green-300 text-sm font-black uppercase tracking-widest">🛡️ FUNDS SECURED IN ESCROW</p>
+                        {/* 3. FUNDED: Buyer can release */}
+                        {deal.status === 'funded' && (
+                            <div className="space-y-8">
+                                <div className="p-6 bg-green-500/5 border border-green-500/20 rounded-lg text-center">
+                                    <p className="text-green-300 text-sm font-black uppercase tracking-widest">🛡️ ASSETS SECURED IN PROTOCOL</p>
                                 </div>
+                                {isBuyer ? (
+                                    <div className="space-y-4">
+                                        <button
+                                            onClick={handleReleaseFunds}
+                                            disabled={isAnyTxPending}
+                                            className="w-full bg-[#A855F7] hover:bg-[#9333ea] disabled:opacity-50 text-white font-black py-6 rounded-lg text-2xl uppercase tracking-tighter shadow-[0_0_40px_rgba(168,85,247,0.4)] transition-all border-2 border-white/20"
+                                        >
+                                            {isReleasing ? 'RELEASING...' : 'RELEASE TO SELLER'}
+                                        </button>
+                                        <button
+                                            onClick={() => handleTx(refundEscrow, 'Opening dispute...')}
+                                            disabled={isAnyTxPending}
+                                            className="w-full py-4 text-orange-400 font-black uppercase tracking-widest text-xs hover:text-orange-300 transition-colors"
+                                        >
+                                            INITIATE DISPUTE
+                                        </button>
+                                    </div>
+                                ) : isSeller ? (
+                                    <div className="p-8 bg-white/[0.02] border border-white/10 rounded-lg text-center">
+                                        <p className="text-secondary font-black uppercase tracking-widest text-xs">Waiting for buyer to release funds...</p>
+                                    </div>
+                                ) : null}
 
-                                {address && isBuyer && (
-                                    <button
-                                        onClick={handleReleaseFunds}
-                                        disabled={isAnyTxPending}
-                                        className="w-full max-w-xl mx-auto py-8 px-12 bg-white text-black font-black text-2xl uppercase tracking-[0.2em] rounded-[2rem] hover:bg-gray-100 transition-all shadow-[0_0_80px_rgba(255,255,255,0.15)] flex items-center justify-center gap-6"
-                                    >
-                                        {isReleasing ? <div className="w-8 h-8 border-4 border-black/10 border-t-black rounded-full animate-spin" /> : "💸 RELEASE TO SELLER"}
-                                    </button>
-                                )}
-
-                                {isDeadlinePassed && address && (isBuyer || isSeller) && (
+                                {isDeadlinePassed && (
                                     <button
                                         onClick={handleRefund}
                                         disabled={isAnyTxPending}
-                                        className="mt-10 px-10 py-4 border-2 border-red-500/20 text-red-500 font-black uppercase tracking-widest text-xs rounded-xl hover:bg-red-500/5 transition-all"
+                                        className="w-full py-3 bg-red-900/10 border border-red-500/30 text-red-400 font-black uppercase tracking-widest text-[10px] rounded hover:bg-red-900/20 transition-all"
                                     >
-                                        {isRefunding ? "Processing Refund..." : "↩️ REFUND (DEADLINE PASSED)"}
+                                        REFUND (DEADLINE EXPIRED)
                                     </button>
                                 )}
                             </div>
                         )}
 
-                        {/* COMPLETED */}
-                        {(deal.status === 'released' || deal.status === 'refunded') && (
-                            <div className="text-center py-16 bg-gradient-to-br from-[#A855F7]/10 to-blue-500/10 border-2 border-white/10 rounded-3xl animate-[fadeIn_1s_ease-out]">
-                                <div className="text-8xl mb-8 animate-bounce">💎</div>
-                                <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-4">
-                                    {deal.status === 'released' ? 'Deal Finalized' : 'Deal Refunded'}
-                                </h1>
-                                <p className="text-secondary font-medium tracking-wide">The protocol has completed all asset movements.</p>
+                        {/* 4. FINAL STATES */}
+                        {(deal.status === 'released' || deal.status === 'refunded' || deal.status === 'disputed') && (
+                            <div className="text-center py-12 space-y-4">
+                                <div className="text-6xl mb-4">
+                                    {deal.status === 'released' ? '💎' : deal.status === 'refunded' ? '↩️' : '⚖️'}
+                                </div>
+                                <h4 className="text-3xl font-black text-white uppercase tracking-tighter">
+                                    {deal.status === 'released' ? 'DEAL COMPLETED' : deal.status === 'refunded' ? 'DEAL REFUNDED' : 'DEAL IN DISPUTE'}
+                                </h4>
+                                <p className="text-secondary font-medium max-w-md mx-auto">
+                                    {deal.status === 'released' ? 'Assets have been successfully transferred to the seller.' :
+                                        deal.status === 'refunded' ? 'Funds have been returned to the buyer.' :
+                                            'The arbiter is currently reviewing this transaction.'}
+                                </p>
                             </div>
                         )}
                     </div>
