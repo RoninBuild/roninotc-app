@@ -10,9 +10,13 @@ import { FACTORY_ADDRESS, USDC_ADDRESS, factoryAbi, escrowAbi, erc20Abi, parseUs
 import type { Deal } from '@/lib/types'
 import Link from 'next/link'
 
-export default function DealClient() {
-    const params = useParams()
-    const dealId = params.dealId as string
+type Props = {
+    dealId: string
+}
+
+export default function DealClient({ dealId }: Props) {
+    // const params = useParams()
+    // const dealId = params.dealId as string
     const { address } = useAccount()
     const [deal, setDeal] = useState<Deal | null>(null)
     const [loading, setLoading] = useState(true)

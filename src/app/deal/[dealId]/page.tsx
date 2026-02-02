@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function DealPage() {
-  return <DealClient />
+export default async function DealPage({ params }: Props) {
+  const { dealId } = await params
+  return <DealClient dealId={dealId} />
 }
