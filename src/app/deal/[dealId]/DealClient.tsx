@@ -64,6 +64,13 @@ export default function DealClient({ dealId }: Props) {
 
     useEffect(() => {
         loadDeal()
+
+        // Auto-refresh every 5 seconds to check for blockchain updates (deployment, funding, etc)
+        const interval = setInterval(() => {
+            loadDeal()
+        }, 5000)
+
+        return () => clearInterval(interval)
     }, [dealId])
 
     // Handle Deal Creation Success
