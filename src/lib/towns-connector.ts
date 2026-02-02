@@ -14,9 +14,14 @@ export function townsConnector() {
         id: 'towns',
         name: 'Towns Wallet',
         type: 'towns',
-        async connect({ chainId } = {}) {
+        async connect<withCapabilities extends boolean = false>(params: {
+            chainId?: number;
+            isReconnecting?: boolean;
+            withCapabilities?: withCapabilities;
+        } = {}) {
+            const { chainId } = params
             try {
-                const { provider, defaultAddress } = await sdk.wallet.getEthereumProvider()
+                const { provider } = await sdk.wallet.getEthereumProvider()
 
                 // Ensure requested chain is supported/selected if provided
                 if (chainId) {
@@ -34,7 +39,7 @@ export function townsConnector() {
                 const currentChainId = await provider.request({ method: 'eth_chainId' }) as string
 
                 return {
-                    accounts,
+                    accounts: accounts as any,
                     chainId: parseInt(currentChainId, 16),
                 }
             } catch (error) {
