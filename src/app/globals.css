@@ -86,6 +86,19 @@
   animation: wave 15s ease infinite;
 }
 
+@keyframes blink {
+
+  0%,
+  90%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
 @utility bg-noise {
   position: fixed;
   top: 0;
@@ -99,12 +112,27 @@
 }
 
 @utility border-industrial {
-  border: 1px solid #27272a;
-  transition: border-color 0.2s ease-in-out;
+  border: 4px solid #ffffff;
+  transition: all 0.2s ease-in-out;
 }
 
 @utility font-code {
   font-family: 'JetBrains Mono', 'Roboto Mono', 'Courier New', monospace;
+}
+
+.card-grid-glow {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.character-eye {
+  animation: blink 4s infinite;
 }
 
 body {
