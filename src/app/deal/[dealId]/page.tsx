@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount } from 'wagmi'
-import { getDeal } from '@/lib/api'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
+import { parseUnits, keccak256, toHex, zeroAddress } from 'viem'
+import { getDeal, updateDealStatus } from '@/lib/api'
+import { FACTORY_ADDRESS, USDC_ADDRESS, factoryAbi, escrowAbi, erc20Abi, parseUsdcAmount } from '@/lib/contracts'
 import type { Deal } from '@/lib/types'
 import Link from 'next/link'
 
@@ -15,26 +17,156 @@ export default function DealPage() {
   const [deal, setDeal] = useState<Deal | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [txStatus, setTxStatus] = useState<string | null>(null)
+
+  // Contract write hooks
+  const { writeContract: createEscrow, data: createHash, isPending: isCreating } = useWriteContract()
+  const { writeContract: approveUsdc, data: approveHash, isPending: isApproving } = useWriteContract()
+  const { writeContract: fundEscrow, data: fundHash, isPending: isFunding } = useWriteContract()
+  const { writeContract: releaseEscrow, data: releaseHash, isPending: isReleasing } = useWriteContract()
+  const { writeContract: refundEscrow, data: refundHash, isPending: isRefunding } = useWriteContract()
+
+  // Transaction confirmations
+  const { isLoading: isCreateConfirming, isSuccess: isCreateSuccess } = useWaitForTransactionReceipt({ hash: createHash })
+  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({ hash: approveHash })
+  const { isLoading: isFundConfirming, isSuccess: isFundSuccess } = useWaitForTransactionReceipt({ hash: fundHash })
+  const { isLoading: isReleaseConfirming, isSuccess: isReleaseSuccess } = useWaitForTransactionReceipt({ hash: releaseHash })
+  const { isLoading: isRefundConfirming, isSuccess: isRefundSuccess } = useWaitForTransactionReceipt({ hash: refundHash })
+
+  // Check USDC allowance for buyer
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: USDC_ADDRESS,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: address && deal?.escrow_address ? [address, deal.escrow_address as `0x${string}`] : undefined,
+  })
+
+  const loadDeal = async () => {
+    try {
+      setLoading(true)
+      const data = await getDeal(dealId)
+      if (!data) {
+        setError('Deal not found')
+      } else {
+        setDeal(data)
+      }
+    } catch (err) {
+      setError('Failed to load deal')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function loadDeal() {
-      try {
-        setLoading(true)
-        const data = await getDeal(dealId)
-        if (!data) {
-          setError('Deal not found')
-        } else {
-          setDeal(data)
-        }
-      } catch (err) {
-        setError('Failed to load deal')
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
     loadDeal()
   }, [dealId])
+
+  // Reload deal after successful transactions
+  useEffect(() => {
+    if (isCreateSuccess || isFundSuccess || isReleaseSuccess || isRefundSuccess) {
+      setTimeout(() => loadDeal(), 2000)
+    }
+  }, [isCreateSuccess, isFundSuccess, isReleaseSuccess, isRefundSuccess])
+
+  // === ACTION HANDLERS ===
+
+  const handleCreateEscrow = async () => {
+    if (!deal || !address) return
+    setTxStatus('Creating escrow on-chain...')
+
+    const amount = parseUsdcAmount(deal.amount)
+    const memoHash = keccak256(toHex(deal.deal_id))
+
+    try {
+      createEscrow({
+        address: FACTORY_ADDRESS,
+        abi: factoryAbi,
+        functionName: 'createEscrow',
+        args: [
+          deal.buyer_address as `0x${string}`,    // buyer
+          deal.seller_address as `0x${string}`,   // seller
+          USDC_ADDRESS,                           // token (USDC)
+          amount,                                 // amount in USDC (6 decimals)
+          BigInt(deal.deadline),                 // deadline timestamp
+          zeroAddress,                           // arbiter (none for now)
+          memoHash,                              // memo hash
+        ],
+      })
+    } catch (err) {
+      console.error('Create escrow error:', err)
+      setTxStatus('Failed to create escrow')
+    }
+  }
+
+  const handleApproveUsdc = async () => {
+    if (!deal?.escrow_address) return
+    setTxStatus('Approving USDC spend...')
+
+    const amount = parseUsdcAmount(deal.amount)
+
+    try {
+      approveUsdc({
+        address: USDC_ADDRESS,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [deal.escrow_address as `0x${string}`, amount],
+      })
+    } catch (err) {
+      console.error('Approve error:', err)
+      setTxStatus('Failed to approve USDC')
+    }
+  }
+
+  const handleFundEscrow = async () => {
+    if (!deal?.escrow_address) return
+    setTxStatus('Funding escrow...')
+
+    try {
+      fundEscrow({
+        address: deal.escrow_address as `0x${string}`,
+        abi: escrowAbi,
+        functionName: 'fund',
+      })
+    } catch (err) {
+      console.error('Fund error:', err)
+      setTxStatus('Failed to fund escrow')
+    }
+  }
+
+  const handleReleaseFunds = async () => {
+    if (!deal?.escrow_address) return
+    setTxStatus('Releasing funds to seller...')
+
+    try {
+      releaseEscrow({
+        address: deal.escrow_address as `0x${string}`,
+        abi: escrowAbi,
+        functionName: 'release',
+      })
+    } catch (err) {
+      console.error('Release error:', err)
+      setTxStatus('Failed to release funds')
+    }
+  }
+
+  const handleRefund = async () => {
+    if (!deal?.escrow_address) return
+    setTxStatus('Processing refund...')
+
+    try {
+      refundEscrow({
+        address: deal.escrow_address as `0x${string}`,
+        abi: escrowAbi,
+        functionName: 'refundAfterDeadline',
+      })
+    } catch (err) {
+      console.error('Refund error:', err)
+      setTxStatus('Failed to refund')
+    }
+  }
+
+  // === HELPER FUNCTIONS ===
 
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; emoji: string }> = {
@@ -51,12 +183,16 @@ export default function DealPage() {
 
   const isSeller = address?.toLowerCase() === deal?.seller_address?.toLowerCase()
   const isBuyer = address?.toLowerCase() === deal?.buyer_address?.toLowerCase()
+  const isAnyTxPending = isCreating || isApproving || isFunding || isReleasing || isRefunding ||
+    isCreateConfirming || isApproveConfirming || isFundConfirming || isReleaseConfirming || isRefundConfirming
+
+  const needsApproval = deal?.escrow_address && allowance !== undefined &&
+    allowance < parseUsdcAmount(deal.amount)
 
   // Loading State
   if (loading) {
     return (
       <div className="min-h-screen bg-background bg-grid flex items-center justify-center relative overflow-hidden">
-        {/* Grid glow effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-transparent to-transparent pointer-events-none" />
         <div className="relative z-10 text-center">
           <div className="w-16 h-16 mx-auto mb-6 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
@@ -88,17 +224,17 @@ export default function DealPage() {
 
   const deadlineDate = new Date(deal.deadline * 1000)
   const statusConfig = getStatusConfig(deal.status)
+  const isDeadlinePassed = Date.now() > deal.deadline * 1000
 
   return (
     <div className="min-h-screen bg-background bg-grid relative overflow-hidden">
-      {/* Background Effects */}
       <div className="fixed inset-0 bg-gradient-to-br from-purple-900/5 via-transparent to-blue-900/5 pointer-events-none" />
 
       {/* Header */}
       <header className="relative z-20 border-b border-white/10 bg-background/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-3 group">
-            <span className="font-black text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-400 group-hover:to-purple-300 transition-all">
+            <span className="font-black text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-400">
               RONIN OTC
             </span>
           </Link>
@@ -107,6 +243,14 @@ export default function DealPage() {
       </header>
 
       <main className="relative z-10 max-w-5xl mx-auto px-6 py-10 space-y-8">
+
+        {/* Transaction Status Banner */}
+        {isAnyTxPending && (
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-purple-600/90 backdrop-blur-xl text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <span className="font-medium">{txStatus || 'Processing transaction...'}</span>
+          </div>
+        )}
 
         {/* Status Header Card */}
         <div className="relative group">
@@ -172,7 +316,9 @@ export default function DealPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-white/5 rounded-xl border border-white/5">
                   <label className="text-xs text-secondary uppercase tracking-wider mb-2 block font-bold">Deadline</label>
-                  <p className="text-sm text-white font-medium">{deadlineDate.toLocaleDateString()}</p>
+                  <p className={`text-sm font-medium ${isDeadlinePassed ? 'text-red-400' : 'text-white'}`}>
+                    {deadlineDate.toLocaleDateString()}
+                  </p>
                   <p className="text-xs text-secondary mt-1">{deadlineDate.toLocaleTimeString()}</p>
                 </div>
                 <div className="p-4 bg-white/5 rounded-xl border border-white/5">
@@ -188,7 +334,7 @@ export default function DealPage() {
         </div>
 
         {/* Description */}
-        <div className="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all">
+        <div className="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <span className="text-yellow-400">📋</span> Description
           </h3>
@@ -203,73 +349,178 @@ export default function DealPage() {
               <span className="text-green-400">⚡</span> Actions
             </h3>
 
+            {/* DRAFT: Seller creates escrow on-chain */}
             {deal.status === 'draft' && (
               <div className="space-y-4">
                 <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
                   <p className="text-yellow-300 text-sm font-medium">
-                    ⏳ This deal has not been created on-chain yet.
+                    ⏳ This deal has not been created on-chain yet. The seller must create the escrow contract first.
                   </p>
                 </div>
-                {isSeller && (
-                  <button className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40">
-                    Create Escrow On-Chain
-                  </button>
-                )}
+
                 {!address && (
                   <div className="text-center py-8 border border-dashed border-white/20 rounded-xl">
-                    <p className="text-secondary mb-4">Connect wallet to proceed</p>
+                    <p className="text-secondary mb-4">Connect your wallet to proceed</p>
                     <ConnectButton />
                   </div>
                 )}
-              </div>
-            )}
 
-            {deal.status === 'created' && (
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                  <p className="text-blue-300 text-sm font-medium">
-                    📝 Waiting for buyer to deposit funds.
-                  </p>
-                </div>
-                {isBuyer && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button className="py-4 px-6 border-2 border-white/20 text-white font-bold rounded-xl hover:bg-white/5 transition-all">
-                      Approve USDC
-                    </button>
-                    <button className="py-4 px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-green-500/25">
-                      Deposit {deal.amount} USDC
-                    </button>
+                {address && isSeller && (
+                  <button
+                    onClick={handleCreateEscrow}
+                    disabled={isAnyTxPending}
+                    className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center justify-center gap-3"
+                  >
+                    {isCreating || isCreateConfirming ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        {isCreateConfirming ? 'Confirming...' : 'Creating...'}
+                      </>
+                    ) : (
+                      <>🚀 Create Escrow On-Chain</>
+                    )}
+                  </button>
+                )}
+
+                {address && isBuyer && !isSeller && (
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-center">
+                    <p className="text-blue-300 text-sm">
+                      ⏳ Waiting for the seller to create the escrow contract...
+                    </p>
                   </div>
                 )}
               </div>
             )}
 
-            {deal.status === 'funded' && (
+            {/* CREATED: Buyer approves + deposits */}
+            {deal.status === 'created' && deal.escrow_address && (
               <div className="space-y-4">
-                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                  <p className="text-green-300 text-sm font-medium">
-                    ✅ Funds are in escrow. Awaiting confirmation.
+                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                  <p className="text-blue-300 text-sm font-medium">
+                    📝 Escrow created. Waiting for buyer to deposit {deal.amount} USDC.
                   </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {isSeller && (
-                    <button className="py-4 px-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/25">
-                      Release Funds
+
+                {!address && (
+                  <div className="text-center py-8 border border-dashed border-white/20 rounded-xl">
+                    <p className="text-secondary mb-4">Connect your wallet to proceed</p>
+                    <ConnectButton />
+                  </div>
+                )}
+
+                {address && isBuyer && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button
+                      onClick={handleApproveUsdc}
+                      disabled={isAnyTxPending || !needsApproval}
+                      className="py-4 px-6 border-2 border-white/20 text-white font-bold rounded-xl hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
+                    >
+                      {isApproving || isApproveConfirming ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          {isApproveConfirming ? 'Confirming...' : 'Approving...'}
+                        </>
+                      ) : !needsApproval ? (
+                        <>✅ Approved</>
+                      ) : (
+                        <>🔓 Approve USDC</>
+                      )}
                     </button>
-                  )}
-                  {isBuyer && (
-                    <button className="py-4 px-6 border-2 border-red-500/30 text-red-400 font-bold rounded-xl hover:bg-red-500/10 transition-all">
-                      Request Refund
+                    <button
+                      onClick={handleFundEscrow}
+                      disabled={isAnyTxPending || needsApproval}
+                      className="py-4 px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-lg shadow-green-500/25 flex items-center justify-center gap-3"
+                    >
+                      {isFunding || isFundConfirming ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          {isFundConfirming ? 'Confirming...' : 'Depositing...'}
+                        </>
+                      ) : (
+                        <>💰 Deposit {deal.amount} USDC</>
+                      )}
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {address && isSeller && !isBuyer && (
+                  <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl text-center">
+                    <p className="text-purple-300 text-sm">
+                      ⏳ Waiting for the buyer to deposit funds...
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
+            {/* FUNDED: Buyer releases, or refund if deadline passed */}
+            {deal.status === 'funded' && deal.escrow_address && (
+              <div className="space-y-4">
+                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                  <p className="text-green-300 text-sm font-medium">
+                    ✅ Funds are in escrow. The buyer can release funds to the seller after receiving the goods/services.
+                  </p>
+                </div>
+
+                {!address && (
+                  <div className="text-center py-8 border border-dashed border-white/20 rounded-xl">
+                    <p className="text-secondary mb-4">Connect your wallet to proceed</p>
+                    <ConnectButton />
+                  </div>
+                )}
+
+                {address && isBuyer && (
+                  <button
+                    onClick={handleReleaseFunds}
+                    disabled={isAnyTxPending}
+                    className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/25 flex items-center justify-center gap-3"
+                  >
+                    {isReleasing || isReleaseConfirming ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        {isReleaseConfirming ? 'Confirming...' : 'Releasing...'}
+                      </>
+                    ) : (
+                      <>💸 Release Funds to Seller</>
+                    )}
+                  </button>
+                )}
+
+                {address && isSeller && !isBuyer && (
+                  <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl text-center">
+                    <p className="text-purple-300 text-sm">
+                      ⏳ Waiting for the buyer to release funds after receiving your goods/services...
+                    </p>
+                  </div>
+                )}
+
+                {/* Refund button if deadline passed */}
+                {isDeadlinePassed && address && (isBuyer || isSeller) && (
+                  <button
+                    onClick={handleRefund}
+                    disabled={isAnyTxPending}
+                    className="w-full py-4 px-6 border-2 border-red-500/30 text-red-400 font-bold rounded-xl hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
+                  >
+                    {isRefunding || isRefundConfirming ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                        {isRefundConfirming ? 'Confirming...' : 'Processing...'}
+                      </>
+                    ) : (
+                      <>↩️ Refund (Deadline Passed)</>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* COMPLETED */}
             {(deal.status === 'released' || deal.status === 'refunded') && (
               <div className="text-center py-10 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl">
                 <div className="text-5xl mb-4">🎉</div>
-                <p className="text-xl font-bold text-green-400">Deal Completed Successfully</p>
+                <p className="text-xl font-bold text-green-400">
+                  {deal.status === 'released' ? 'Deal Completed Successfully' : 'Deal Refunded'}
+                </p>
                 <p className="text-secondary mt-2">All funds have been processed.</p>
               </div>
             )}
@@ -312,10 +563,12 @@ export default function DealPage() {
                   <span className="text-xs">↗</span>
                 </a>
               </div>
-              <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl">
-                <span className="text-secondary">Created</span>
-                <span className="text-sm text-white">{new Date(deal.created_at).toLocaleString()}</span>
-              </div>
+              {deal.created_at && (
+                <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl">
+                  <span className="text-secondary">Created</span>
+                  <span className="text-sm text-white">{new Date(deal.created_at).toLocaleString()}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
