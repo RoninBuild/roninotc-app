@@ -76,52 +76,55 @@ export default function DealClient({ dealId }: Props) {
     // Handle Deal Creation Success
     useEffect(() => {
         if (isCreateSuccess && createReceipt && deal) {
+            console.log('=== CREATE SUCCESS ===')
+            console.log('Receipt:', createReceipt)
+            console.log('Logs count:', createReceipt.logs.length)
+
             const handleSuccess = async () => {
                 try {
-                    // Find partial match for event topic or try to decode all
-                    // We know the factory ABI has EscrowCreated
-                    // Simply finding the last log from the factory address might work, or decode
-                    // Let's assume the log comes from Factory
-
-                    // Simple parsing for now since we have the hash. 
-                    // But we need the ADDRESS from the log.
-                    // Let's use viem decodeEventLog if we imported it, or just scan topics if we know the signature.
-                    // EscrowCreated(address,uint256,address,address,address,uint256,uint256,address,bytes32)
-                    // We need the first arg (escrowAddress). It is indexed? Yes.
-                    // Topic 0: Keccak("EscrowCreated(...)")
-                    // Topic 1: escrowAddress (padded)
-
-                    // Actually, let's just use the API to update if we can't parse easily? 
-                    // No, we need the clone address. 
-                    // Let's iterate logs.
-
+                    // Find the EscrowCreated event from Factory
                     for (const log of createReceipt.logs) {
-                        try {
-                            if (log.address.toLowerCase() === FACTORY_ADDRESS.toLowerCase()) {
-                                // It's from our factory.
-                                // Topic 1 is escrowAddress (indexed address are 32 bytes)
-                                const escrowAddressTopic = log.topics[1]
-                                if (escrowAddressTopic) {
-                                    // Convert bytes32 to address
-                                    const escrowAddress = `0x${escrowAddressTopic.slice(26)}` as `0x${string}`
+                        console.log('Log address:', log.address)
+                        console.log('Log topics:', log.topics)
 
+                        if (log.address.toLowerCase() === FACTORY_ADDRESS.toLowerCase()) {
+                            // EscrowCreated event has escrowAddress as first indexed param (topics[1])
+                            const escrowAddressTopic = log.topics[1]
+                            if (escrowAddressTopic) {
+                                // Topics are 32 bytes (64 hex chars + 0x), address is last 20 bytes (40 hex chars)
+                                const escrowAddress = `0x${escrowAddressTopic.slice(-40)}` as `0x${string}`
+
+                                console.log('Extracted escrow address:', escrowAddress)
+
+                                try {
                                     await updateDealStatus(deal.deal_id, 'created', escrowAddress)
-                                    console.log('Deal status updated to Created:', escrowAddress)
-                                    loadDeal() // Reload new state
-                                    return
+                                    console.log('✅ Deal status updated to Created!')
+                                    setTxStatus('Escrow created! Reloading...')
+
+                                    // Force reload deal data
+                                    await loadDeal()
+                                } catch (apiError) {
+                                    console.error('API update failed:', apiError)
+                                    setTxStatus('Contract created but status update failed. Refreshing...')
+                                    await loadDeal()
                                 }
+                                return
                             }
-                        } catch (e) {
-                            console.error('Log parse error', e)
                         }
                     }
+
+                    console.warn('No EscrowCreated event found in logs')
+                    setTxStatus('Contract may be created. Refreshing...')
+                    await loadDeal()
+
                 } catch (e) {
-                    console.error('Failed to update deal status', e)
+                    console.error('Failed to process creation success:', e)
+                    setTxStatus('Error processing. Please refresh.')
                 }
             }
             handleSuccess()
         }
-    }, [isCreateSuccess, createReceipt])
+    }, [isCreateSuccess, createReceipt, deal])
 
 
     // Reload deal after other successful transactions
