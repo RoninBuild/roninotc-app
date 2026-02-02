@@ -14,6 +14,36 @@ type Props = {
     dealId: string
 }
 
+function CountdownTimer({ deadline }: { deadline: number }) {
+    const [timeLeft, setTimeLeft] = useState<string>('')
+
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            const difference = deadline * 1000 - Date.now()
+            if (difference <= 0) return 'EXPIRED'
+
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+            const hours = Math.floor((difference / (1000 * 60 * 60)) % 24)
+            const minutes = Math.floor((difference / 1000 / 60) % 60)
+            const seconds = Math.floor((difference / 1000) % 60)
+
+            let parts = []
+            if (days > 0) parts.push(`${days}d`)
+            if (hours > 0 || days > 0) parts.push(`${hours}h`)
+            parts.push(`${minutes}m`)
+            if (days === 0 && hours === 0) parts.push(`${seconds}s`)
+
+            return parts.join(' ')
+        }
+
+        setTimeLeft(calculateTimeLeft())
+        const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000)
+        return () => clearInterval(timer)
+    }, [deadline])
+
+    return <span>{timeLeft}</span>
+}
+
 export default function DealClient({ dealId }: Props) {
     const { address } = useAccount()
     const [deal, setDeal] = useState<Deal | null>(null)
@@ -366,16 +396,16 @@ export default function DealClient({ dealId }: Props) {
                 )}
 
                 {/* Status Header Card - Squared & Shimmer Border */}
-                <div className="relative group animate-[slideUp_0.6s_ease-out]">
-                    <div className="absolute -inset-[2px] rounded-xl border-glow blur-[2px] opacity-40 group-hover:opacity-80 transition-opacity duration-700" />
-                    <div className="relative bg-[#050505] rounded-[10px] p-8 overflow-hidden border border-white/10">
-                        <div className="flex items-center justify-between flex-wrap gap-8">
-                            <div className="flex flex-col gap-3">
-                                <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white uppercase leading-none">
+                <div className="relative group max-w-3xl mx-auto animate-[slideUp_0.6s_ease-out]">
+                    <div className="absolute -inset-[3px] rounded-xl border-glow blur-[3px] opacity-60 group-hover:opacity-100 transition-opacity duration-700" />
+                    <div className="relative bg-[#050505]/40 backdrop-blur-3xl rounded-[10px] p-6 overflow-hidden border border-white/10">
+                        <div className="flex items-center justify-between flex-wrap gap-6">
+                            <div className="flex flex-col gap-2">
+                                <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-white uppercase leading-none text-hover-gradient">
                                     DEAL SUMMARY
                                 </h1>
                                 <div className="flex items-center gap-3">
-                                    <p className="font-mono text-xl text-shimmer font-bold tracking-tight break-all">
+                                    <p className="font-mono text-lg text-shimmer font-bold tracking-tight break-all">
                                         {deal.deal_id}
                                     </p>
                                     <button
@@ -384,18 +414,17 @@ export default function DealClient({ dealId }: Props) {
                                             setTxStatus('ID copied!');
                                             setTimeout(() => setTxStatus(null), 2000);
                                         }}
-                                        className="p-2 bg-white/5 hover:bg-white/10 rounded-md transition-all text-secondary hover:text-white border border-white/10"
+                                        className="p-1.5 bg-white/5 hover:bg-white/10 rounded-md transition-all text-secondary hover:text-white border border-white/10"
                                         title="Copy ID"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
                                         </svg>
                                     </button>
                                 </div>
                             </div>
-                            <div className={`flex items-center gap-4 px-10 py-5 rounded-lg border-2 shadow-2xl transition-all duration-500 ${statusConfig.bg}`}>
-                                <span className="text-3xl">{statusConfig.emoji}</span>
-                                <span className={`font-black text-2xl uppercase tracking-tighter ${statusConfig.color}`}>
+                            <div className={`flex items-center gap-3 px-6 py-3 rounded-lg border-2 shadow-2xl transition-all duration-500 ${statusConfig.bg}`}>
+                                <span className={`font-black text-xl uppercase tracking-tighter ${statusConfig.color}`}>
                                     {deal.status}
                                 </span>
                             </div>
@@ -404,31 +433,31 @@ export default function DealClient({ dealId }: Props) {
                 </div>
 
                 {/* Main Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
 
                     {/* Participants Card */}
                     <div className="relative group animate-[slideUp_0.8s_ease-out]">
-                        <div className="absolute -inset-[2px] rounded-xl border-glow blur-sm opacity-20 group-hover:opacity-40 transition-opacity duration-700" />
-                        <div className="relative bg-[#050505] rounded-[10px] p-6 border border-white/10 h-full">
-                            <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">
+                        <div className="absolute -inset-[3px] rounded-xl border-glow blur-md opacity-30 group-hover:opacity-60 transition-opacity duration-700" />
+                        <div className="relative bg-[#050505]/40 backdrop-blur-3xl rounded-[10px] p-5 border border-white/10 h-full">
+                            <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40 text-hover-gradient">
                                 PARTICIPANTS
                             </h3>
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] text-purple-400 uppercase tracking-[0.3em] font-black opacity-70 ml-1">SELLER</label>
-                                    <div className="relative p-5 bg-white/[0.03] rounded-lg border border-white/5 flex items-center justify-between gap-4">
-                                        <p className="font-mono text-lg text-shimmer font-bold break-all leading-none">{deal.seller_address}</p>
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-[9px] text-purple-400 uppercase tracking-[0.3em] font-black opacity-70 ml-1">SELLER</label>
+                                    <div className="relative p-4 bg-white/[0.03] rounded-lg border border-white/5 flex items-center justify-between gap-4">
+                                        <p className="font-mono text-base text-shimmer font-bold break-all leading-none">{deal.seller_address}</p>
                                         {isSeller && (
-                                            <span className="text-[9px] px-2 py-1 bg-purple-500/20 text-purple-300 rounded border border-purple-500/30 font-black uppercase tracking-widest whitespace-nowrap">YOU</span>
+                                            <span className="text-[8px] px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded border border-purple-500/30 font-black uppercase tracking-widest whitespace-nowrap">YOU</span>
                                         )}
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] text-blue-400 uppercase tracking-[0.3em] font-black opacity-70 ml-1">BUYER</label>
-                                    <div className="relative p-5 bg-white/[0.03] rounded-lg border border-white/5 flex items-center justify-between gap-4">
-                                        <p className="font-mono text-lg text-shimmer font-bold break-all leading-none">{deal.buyer_address}</p>
+                                <div className="space-y-1">
+                                    <label className="text-[9px] text-blue-400 uppercase tracking-[0.3em] font-black opacity-70 ml-1">BUYER</label>
+                                    <div className="relative p-4 bg-white/[0.03] rounded-lg border border-white/5 flex items-center justify-between gap-4">
+                                        <p className="font-mono text-base text-shimmer font-bold break-all leading-none">{deal.buyer_address}</p>
                                         {isBuyer && (
-                                            <span className="text-[9px] px-2 py-1 bg-blue-500/20 text-blue-300 rounded border border-blue-500/30 font-black uppercase tracking-widest whitespace-nowrap">YOU</span>
+                                            <span className="text-[8px] px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded border border-blue-500/30 font-black uppercase tracking-widest whitespace-nowrap">YOU</span>
                                         )}
                                     </div>
                                 </div>
@@ -438,35 +467,35 @@ export default function DealClient({ dealId }: Props) {
 
                     {/* Deal Details Card */}
                     <div className="relative group animate-[slideUp_1s_ease-out]">
-                        <div className="absolute -inset-[2px] rounded-xl border-glow blur-sm opacity-20 group-hover:opacity-40 transition-opacity duration-700" />
-                        <div className="relative bg-[#050505] rounded-[10px] p-6 border border-white/10 h-full">
-                            <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">
+                        <div className="absolute -inset-[3px] rounded-xl border-glow blur-md opacity-30 group-hover:opacity-60 transition-opacity duration-700" />
+                        <div className="relative bg-[#050505]/40 backdrop-blur-3xl rounded-[10px] p-5 border border-white/10 h-full">
+                            <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40 text-hover-gradient">
                                 ASSET INFO
                             </h3>
-                            <div className="space-y-6">
-                                <div className="p-6 bg-white/[0.03] rounded-lg border border-white/5">
-                                    <label className="text-[10px] text-secondary uppercase tracking-[0.3em] mb-3 block font-black opacity-70">TOTAL VALUE</label>
-                                    <div className="flex items-baseline gap-3">
-                                        <span className="text-5xl font-black tracking-tighter text-shimmer">
+                            <div className="space-y-4">
+                                <div className="p-4 bg-white/[0.03] rounded-lg border border-white/5">
+                                    <label className="text-[9px] text-secondary uppercase tracking-[0.3em] mb-2 block font-black opacity-70">TOTAL VALUE</label>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-4xl font-black tracking-tighter text-shimmer">
                                             {deal.amount}
                                         </span>
-                                        <span className="text-xl font-black text-white/40 uppercase tracking-widest">
+                                        <span className="text-lg font-black text-white/40 uppercase tracking-widest">
                                             {deal.token}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-4 bg-white/[0.02] rounded-lg border border-white/5">
-                                        <label className="text-[10px] text-secondary uppercase tracking-[0.3em] mb-2 block font-black opacity-70">DEADLINE</label>
-                                        <p className={`text-lg font-black tracking-tighter ${isDeadlinePassed ? 'text-red-500' : 'text-white'}`}>
-                                            {deadlineDate.toLocaleDateString([], { day: '2-digit', month: 'short' })}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="p-3 bg-white/[0.02] rounded-lg border border-white/5">
+                                        <label className="text-[9px] text-secondary uppercase tracking-[0.3em] mb-1.5 block font-black opacity-70">REMAINING</label>
+                                        <p className={`text-base font-black tracking-tighter ${isDeadlinePassed ? 'text-red-500' : 'text-white'}`}>
+                                            <CountdownTimer deadline={deal.deadline} />
                                         </p>
                                     </div>
-                                    <div className="p-4 bg-white/[0.02] rounded-lg border border-white/5">
-                                        <label className="text-[10px] text-secondary uppercase tracking-[0.3em] mb-2 block font-black opacity-70">NETWORK</label>
+                                    <div className="p-3 bg-white/[0.02] rounded-lg border border-white/5">
+                                        <label className="text-[9px] text-secondary uppercase tracking-[0.3em] mb-1.5 block font-black opacity-70">NETWORK</label>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                                            <p className="text-lg font-black tracking-tighter text-white uppercase leading-none">BASE</p>
+                                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+                                            <p className="text-base font-black tracking-tighter text-white uppercase leading-none">BASE</p>
                                         </div>
                                     </div>
                                 </div>
@@ -476,23 +505,23 @@ export default function DealClient({ dealId }: Props) {
                 </div>
 
                 {/* Description - Full Width Glass */}
-                <div className="relative group animate-[fadeIn_1.2s_ease-out]">
-                    <div className="absolute -inset-[1px] rounded-xl border-glow opacity-10" />
-                    <div className="relative bg-[#050505] rounded-[10px] p-8 border border-white/10">
-                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-4 opacity-40">
+                <div className="relative group max-w-4xl mx-auto animate-[fadeIn_1.2s_ease-out]">
+                    <div className="absolute -inset-[2px] rounded-xl border-glow blur-sm opacity-20 group-hover:opacity-40 transition-opacity duration-700" />
+                    <div className="relative bg-[#050505]/40 backdrop-blur-3xl rounded-[10px] p-6 border border-white/10">
+                        <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-3 opacity-40 text-hover-gradient">
                             TERMS & NOTES
                         </h3>
-                        <p className="text-lg text-secondary leading-relaxed font-medium tracking-tight">
+                        <p className="text-base text-secondary leading-relaxed font-medium tracking-tight">
                             {deal.description || "No specific terms provided."}
                         </p>
                     </div>
                 </div>
 
                 {/* Actions - The Prime Section */}
-                <div className="relative group animate-[slideUp_1.4s_ease-out]">
-                    <div className="absolute -inset-[2px] rounded-2xl border-glow blur-sm opacity-20 group-hover:opacity-40 transition-opacity duration-700" />
-                    <div className="relative bg-[#050505] rounded-xl p-10 border border-white/20">
-                        <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">
+                <div className="relative group max-w-4xl mx-auto animate-[slideUp_1.4s_ease-out]">
+                    <div className="absolute -inset-[4px] rounded-2xl border-glow blur-lg opacity-40 group-hover:opacity-80 transition-opacity duration-700" />
+                    <div className="relative bg-[#050505]/40 backdrop-blur-3xl rounded-xl p-8 border border-white/20">
+                        <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40 text-hover-gradient">
                             EXECUTION
                         </h3>
 
@@ -616,24 +645,42 @@ export default function DealClient({ dealId }: Props) {
                     </div>
                 </div>
 
-                {/* Footer Section - Glass Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-[fadeIn_1.6s_ease-out]">
-                    <div className="bg-[#050505]/60 backdrop-blur-xl border-2 border-white/5 rounded-2xl p-6 flex justify-between items-center group">
-                        <span className="text-xs font-black uppercase tracking-widest text-secondary group-hover:text-white transition-colors">Protocol Fee</span>
-                        <span className="text-xl font-black text-white">0.5%</span>
+                {/* Footer Section - Protocol Fee Switcher & Smart Contract */}
+                <div className="max-w-4xl mx-auto space-y-6 animate-[fadeIn_1.6s_ease-out]">
+                    <div className="relative group">
+                        <div className="absolute -inset-[2px] rounded-2xl border-glow blur-md opacity-20 group-hover:opacity-40 transition-opacity duration-700" />
+                        <div className="relative bg-[#050505]/60 backdrop-blur-3xl border-2 border-white/5 rounded-2xl p-6">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                                <div className="space-y-1">
+                                    <h4 className="text-xs font-black uppercase tracking-[0.3em] text-purple-400 opacity-70">PROTOCOL FEE STRUCTURE</h4>
+                                    <p className="text-secondary text-sm font-medium">Lower your fees by using our native ecosystem tokens.</p>
+                                </div>
+                                <div className="flex items-center gap-4 bg-white/5 p-2 rounded-xl border border-white/10">
+                                    <div className="px-4 py-2 bg-white/10 rounded-lg border border-white/20 shadow-xl">
+                                        <span className="text-xs font-black text-white uppercase tracking-widest">STANDARD: 0.5%</span>
+                                    </div>
+                                    <div className="px-4 py-2 rounded-lg opacity-40 hover:opacity-100 transition-opacity cursor-help" title="Coming Soon">
+                                        <span className="text-xs font-black text-secondary uppercase tracking-widest">$TOWNS: 0.1% <span className="text-[8px] ml-1 bg-purple-500/20 text-purple-300 px-1 rounded">SOON</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
                     {deal.escrow_address && (
                         <a
                             href={`https://basescan.org/address/${deal.escrow_address}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="bg-[#050505]/60 backdrop-blur-xl border-2 border-white/5 rounded-2xl p-6 flex justify-between items-center group hover:border-[#A855F7]/30 transition-all"
+                            className="block bg-[#050505]/40 backdrop-blur-3xl border-2 border-white/5 rounded-2xl p-6 group hover:border-[#A855F7]/30 transition-all text-center md:text-left"
                         >
-                            <span className="text-xs font-black uppercase tracking-widest text-secondary group-hover:text-[#A855F7] transition-colors">Smart Contract</span>
-                            <span className="font-mono text-xs text-white bg-white/5 py-2 px-4 rounded-lg group-hover:bg-[#A855F7]/10">
-                                {deal.escrow_address.slice(0, 8)}...{deal.escrow_address.slice(-8)}
-                                <span className="ml-2 opacity-50">↗</span>
-                            </span>
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                                <span className="text-xs font-black uppercase tracking-widest text-secondary group-hover:text-white transition-colors">Verified On-Chain Contract</span>
+                                <span className="font-mono text-xs text-white bg-white/5 py-2 px-4 rounded-lg group-hover:bg-[#A855F7]/10 transition-all border border-white/5 group-hover:border-[#A855F7]/20">
+                                    {deal.escrow_address}
+                                    <span className="ml-2 opacity-50">↗</span>
+                                </span>
+                            </div>
                         </a>
                     )}
                 </div>

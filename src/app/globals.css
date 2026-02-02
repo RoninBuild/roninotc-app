@@ -102,7 +102,25 @@
 @utility border-glow {
   background: linear-gradient(90deg, #A855F7, #3b82f6, #A855F7);
   background-size: 200% auto;
-  animation: borderFlow 4s linear infinite;
+  animation: borderFlow 3s linear infinite;
+  filter: blur(8px);
+}
+
+@utility text-hover-gradient {
+  transition: all 0.5s ease-out;
+}
+
+.group:hover .text-hover-gradient {
+  background: linear-gradient(to right,
+      #ffffff 20%,
+      #A855F7 40%,
+      #3b82f6 60%,
+      #ffffff 80%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
 }
 
 body {
