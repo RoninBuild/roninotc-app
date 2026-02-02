@@ -30,9 +30,9 @@ export function Header() {
                         <div className="px-6 py-2.5 rounded-full bg-white text-black font-extrabold text-sm tracking-wide shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                             OTC
                         </div>
-                        <div className="relative flex items-center gap-2 px-6 py-2.5 rounded-full text-secondary font-semibold text-sm hover:text-white transition-colors cursor-not-allowed group-hover:text-gray-300">
+                        <div className="relative flex items-center gap-2 px-6 py-2.5 rounded-full text-secondary font-bold text-sm hover:text-white transition-colors cursor-not-allowed group-hover:text-gray-300">
                             PreMarket
-                            <span className="bg-[#695AF6] text-white text-[10px] font-black px-2 py-0.5 rounded-sm shadow-[0_0_10px_#695AF6]">
+                            <span className="bg-[#695AF6] text-white text-[10px] font-black px-2 py-0.5 rounded-sm shadow-[0_0_10px_#695AF6] tracking-wide">
                                 SOON
                             </span>
                         </div>

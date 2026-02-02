@@ -35,27 +35,27 @@ export default function Home() {
 
       {/* The Ronin Character (Peeking from darkness) */}
       <div
-        className="absolute bottom-[-20px] right-[-50px] md:right-[10%] md:bottom-[5%] w-[450px] h-[450px] opacity-20 pointer-events-none transition-all duration-700 ease-out z-0"
+        className="absolute bottom-[0px] right-[-50px] md:right-[5%] md:bottom-[15%] w-[600px] h-[600px] opacity-25 pointer-events-none transition-all duration-700 ease-out z-0"
         style={{
           transform: `translate(${mousePos.x * 0.015}px, ${mousePos.y * 0.015}px)`,
           // Using a mask to hide the hard edges of the image background
-          maskImage: 'radial-gradient(circle at center, black 30%, transparent 70%)',
-          WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 70%)',
+          maskImage: 'radial-gradient(circle at center, black 40%, transparent 70%)',
+          WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 70%)',
         }}
       >
         <img src="/assets/ronin.png" alt="Ronin Character" className="w-full h-full object-contain mix-blend-multiply filter contrast-125 saturate-0" />
-        {/* Glowing Eyes - Repositioned slightly for new image scale */}
-        <div className="absolute top-[38%] left-[42%] w-2 h-2 bg-purple-500 blur-[3px] animate-pulse shadow-[0_0_20px_#A855F7]" />
-        <div className="absolute top-[38%] left-[55%] w-2 h-2 bg-purple-500 blur-[3px] animate-pulse shadow-[0_0_20px_#A855F7]" />
+        {/* Glowing Eyes - Repositioned for larger scale */}
+        <div className="absolute top-[38%] left-[42%] w-3 h-3 bg-purple-500 blur-[4px] animate-pulse shadow-[0_0_25px_#A855F7]" />
+        <div className="absolute top-[38%] left-[55%] w-3 h-3 bg-purple-500 blur-[4px] animate-pulse shadow-[0_0_25px_#A855F7]" />
       </div>
 
       {/* Hero Section - Moved Higher */}
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-start justify-center min-h-[75vh] px-8 md:px-12 -mt-24">
 
         {/* Simple Text Header (Replaces Badge) */}
-        <div className="mb-4 opacity-0 animate-[fadeIn_0.8s_ease-out_forwards]">
-          <span className="font-sans font-black text-3xl md:text-4xl text-white tracking-tighter uppercase drop-shadow-2xl">
-            RoninOTC
+        <div className="mb-6 opacity-0 animate-[fadeIn_0.8s_ease-out_forwards]">
+          <span className="font-sans font-black text-4xl md:text-5xl tracking-tighter uppercase drop-shadow-2xl text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E2E8F0] to-[#A855F7]">
+            RONIN OTC
           </span>
         </div>
 
