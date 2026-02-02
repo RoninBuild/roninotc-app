@@ -53,9 +53,17 @@ export const metadata: Metadata = {
       },
     }),
     'fc:frame:image': 'https://roninotc-app.vercel.app/logo.png',
+    'fc:frame:image:aspect_ratio': '1.1',
     'fc:frame:button:1': 'Launch RoninOTC',
     'fc:frame:button:1:action': 'launch_frame',
     'fc:frame:button:1:target': 'https://roninotc-app.vercel.app',
+    'og:title': 'RoninOTC - Trustless Escrow on Base',
+    'og:description': 'Secure OTC deals in Towns channels. Built for the Towns ecosystem.',
+    'og:image': 'https://roninotc-app.vercel.app/logo.png',
+    'twitter:card': 'summary_large_image',
+    'twitter:title': 'RoninOTC - Trustless Escrow on Base',
+    'twitter:description': 'Secure OTC deals in Towns channels. Built for the Towns ecosystem.',
+    'twitter:image': 'https://roninotc-app.vercel.app/logo.png',
   },
 }
 
