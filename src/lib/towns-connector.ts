@@ -22,6 +22,7 @@ export function townsConnector() {
             const { chainId } = params
             try {
                 const provider = await sdk.wallet.getEthereumProvider()
+                if (!provider) throw new Error('Towns provider not found')
 
                 // Ensure requested chain is supported/selected if provided
                 if (chainId) {
@@ -52,15 +53,18 @@ export function townsConnector() {
         },
         async getAccounts() {
             const provider = await sdk.wallet.getEthereumProvider()
+            if (!provider) return []
             return await provider.request({ method: 'eth_accounts' }) as Address[]
         },
         async getChainId() {
             const provider = await sdk.wallet.getEthereumProvider()
+            if (!provider) throw new Error('Towns provider not found')
             const chainId = await provider.request({ method: 'eth_chainId' }) as string
             return parseInt(chainId, 16)
         },
         async getProvider() {
             const provider = await sdk.wallet.getEthereumProvider()
+            if (!provider) throw new Error('Towns provider not found')
             return provider
         },
         async isAuthorized() {
