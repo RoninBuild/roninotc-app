@@ -16,7 +16,7 @@ const connectors = connectorsForWallets(
         () => ({
           id: 'towns',
           name: 'Towns Wallet',
-          iconUrl: 'https://roninotc-app.vercel.app/logo.png',
+          iconUrl: 'https://roninotc-app.vercel.app/ronin_otc_standard.jpg',
           iconBackground: '#0b0618',
           createConnector: townsConnector,
         }),
