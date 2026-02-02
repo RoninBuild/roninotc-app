@@ -33,13 +33,29 @@ function HomeContent() {
       onMouseMove={handleMouseMove}
     >
 
-      {/* Interactive Spotlight & Character Reveal */}
+      {/* Spotlight Effect */}
       <div
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
         style={{
-          background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(29, 78, 216, 0.08), transparent 60%)`
+          background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(168, 85, 247, 0.05), transparent 60%)`
         }}
       />
+
+      {/* The Ronin Character (Peeking from darkness) */}
+      <div
+        className="absolute bottom-[0px] right-[-50px] md:right-[5%] md:bottom-[15%] w-[600px] h-[600px] opacity-25 pointer-events-none transition-all duration-700 ease-out z-0"
+        style={{
+          transform: `translate(${mousePos.x * 0.015}px, ${mousePos.y * 0.015}px)`,
+          // Using a mask to hide the hard edges of the image background
+          maskImage: 'radial-gradient(circle at center, black 40%, transparent 70%)',
+          WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 70%)',
+        }}
+      >
+        <img src="/assets/ronin.png" alt="Ronin Character" className="w-full h-full object-contain mix-blend-multiply filter contrast-125 saturate-0" />
+        {/* Glowing Eyes */}
+        <div className="absolute top-[38%] left-[42%] w-3 h-3 bg-purple-500 blur-[4px] animate-pulse shadow-[0_0_25px_#A855F7]" />
+        <div className="absolute top-[38%] left-[55%] w-3 h-3 bg-purple-500 blur-[4px] animate-pulse shadow-[0_0_25px_#A855F7]" />
+      </div>
 
       {/* Hero Section - Moved Higher */}
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-start justify-center min-h-[75vh] px-8 md:px-12 -mt-24">
