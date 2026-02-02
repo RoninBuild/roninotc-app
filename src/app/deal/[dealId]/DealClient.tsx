@@ -31,7 +31,7 @@ export default function DealClient({ dealId }: Props) {
     const { writeContract: refundEscrow, data: refundHash, isPending: isRefunding } = useWriteContract()
 
     // Transaction confirmations
-    const { isLoading: isCreateConfirming, isSuccess: isCreateSuccess } = useWaitForTransactionReceipt({ hash: createHash })
+    const { isLoading: isCreateConfirming, isSuccess: isCreateSuccess, data: createReceipt } = useWaitForTransactionReceipt({ hash: createHash })
     const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({ hash: approveHash })
     const { isLoading: isFundConfirming, isSuccess: isFundSuccess } = useWaitForTransactionReceipt({ hash: fundHash })
     const { isLoading: isReleaseConfirming, isSuccess: isReleaseSuccess } = useWaitForTransactionReceipt({ hash: releaseHash })
@@ -66,17 +66,76 @@ export default function DealClient({ dealId }: Props) {
         loadDeal()
     }, [dealId])
 
-    // Reload deal after successful transactions
+    // Handle Deal Creation Success
     useEffect(() => {
-        if (isCreateSuccess || isFundSuccess || isReleaseSuccess || isRefundSuccess) {
+        if (isCreateSuccess && createReceipt && deal) {
+            const handleSuccess = async () => {
+                try {
+                    // Find partial match for event topic or try to decode all
+                    // We know the factory ABI has EscrowCreated
+                    // Simply finding the last log from the factory address might work, or decode
+                    // Let's assume the log comes from Factory
+
+                    // Simple parsing for now since we have the hash. 
+                    // But we need the ADDRESS from the log.
+                    // Let's use viem decodeEventLog if we imported it, or just scan topics if we know the signature.
+                    // EscrowCreated(address,uint256,address,address,address,uint256,uint256,address,bytes32)
+                    // We need the first arg (escrowAddress). It is indexed? Yes.
+                    // Topic 0: Keccak("EscrowCreated(...)")
+                    // Topic 1: escrowAddress (padded)
+
+                    // Actually, let's just use the API to update if we can't parse easily? 
+                    // No, we need the clone address. 
+                    // Let's iterate logs.
+
+                    for (const log of createReceipt.logs) {
+                        try {
+                            if (log.address.toLowerCase() === FACTORY_ADDRESS.toLowerCase()) {
+                                // It's from our factory.
+                                // Topic 1 is escrowAddress (indexed address are 32 bytes)
+                                const escrowAddressTopic = log.topics[1]
+                                if (escrowAddressTopic) {
+                                    // Convert bytes32 to address
+                                    const escrowAddress = `0x${escrowAddressTopic.slice(26)}` as `0x${string}`
+
+                                    await updateDealStatus(deal.deal_id, 'created', escrowAddress)
+                                    console.log('Deal status updated to Created:', escrowAddress)
+                                    loadDeal() // Reload new state
+                                    return
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Log parse error', e)
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to update deal status', e)
+                }
+            }
+            handleSuccess()
+        }
+    }, [isCreateSuccess, createReceipt])
+
+
+    // Reload deal after other successful transactions
+    useEffect(() => {
+        if (isFundSuccess || isReleaseSuccess || isRefundSuccess) {
             setTimeout(() => loadDeal(), 2000)
         }
-    }, [isCreateSuccess, isFundSuccess, isReleaseSuccess, isRefundSuccess])
+    }, [isFundSuccess, isReleaseSuccess, isRefundSuccess])
 
     // === ACTION HANDLERS ===
 
     const handleCreateEscrow = async () => {
         if (!deal || !address) return
+
+        // Prevent self-dealing deployment
+        if (deal.seller_address.toLowerCase() === deal.buyer_address.toLowerCase()) {
+            setTxStatus('Error: Seller cannot be Buyer')
+            alert('Cannot deploy: Seller and Buyer addresses are the same.')
+            return
+        }
+
         setTxStatus('Creating escrow on-chain...')
 
         const amount = parseUsdcAmount(deal.amount)
