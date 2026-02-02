@@ -1,36 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RoninOTC (Towns Bot + Mini-App) | MVP
 
-## Getting Started
+RoninOTC is an early MVP escrow bot for secure OTC deals inside Towns.
+Create a deal in chat, then complete the onchain steps in the mini-app.
 
-First, run the development server:
+## Demo flow
+1) Add the bot to a Towns chat
+2) Create a deal:
+   /escrow_create @username "product or deal description" <amount USDC>
+3) Mini-app opens to complete:
+   - deposit to escrow
+   - set terms (fees, expiration)
+   - optional arbitrator assignment
+   - confirm + release
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Smart contract
+Base escrow contract:
+0x61dA31C366D67d5De8A9E0E0CA280C7B3B900306
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Current status
+This is a time-boxed MVP shipped close to the deadline.
+Core mechanics are in place, UX and full integration are still in progress.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Roadmap
+- Better deal management UX inside the bot
+- Arbitrator incentives paid in $TOWNS (auto swap from collected USDC)
+- Premium marketplace flows
+- Deeper native integration as an in-Towns app
