@@ -11,16 +11,21 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const init = async () => {
             try {
-                // Signal ready to Towns
+                console.log('Initializing Towns SDK...')
                 await sdk.actions.ready()
-                console.log('Towns SDK signaled ready')
 
-                // Check if we are in Towns and not connected
-                if (!isConnected) {
-                    const towns = connectors.find((c) => c.id === 'towns')
-                    if (towns) {
-                        console.log('Auto-connecting to Towns wallet...')
-                        connect({ connector: towns })
+                const context = await sdk.context
+                console.log('Towns context received:', context)
+
+                if (context?.towns && !isConnected) {
+                    console.log('Towns environment detected. Available connectors:', connectors.map(c => `${c.id} (${c.name})`))
+
+                    const townsConnector = connectors.find((c) => c.id === 'towns' || c.name.toLowerCase().includes('towns'))
+                    if (townsConnector) {
+                        console.log('Auto-connecting to Towns wallet via:', townsConnector.name)
+                        connect({ connector: townsConnector })
+                    } else {
+                        console.warn('Towns connector NOT found in Wagmi config!')
                     }
                 }
             } catch (error) {
