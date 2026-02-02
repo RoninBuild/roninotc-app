@@ -44,6 +44,51 @@ function CountdownTimer({ deadline }: { deadline: number }) {
     return <span>{timeLeft}</span>
 }
 
+function GlobalInteractiveGrid() {
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+
+    useEffect(() => {
+        const handleGlobalMouseMove = (e: MouseEvent) => {
+            setMousePos({ x: e.clientX, y: e.clientY })
+        }
+        window.addEventListener('mousemove', handleGlobalMouseMove)
+        return () => window.removeEventListener('mousemove', handleGlobalMouseMove)
+    }, [])
+
+    return (
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+            {/* Spotlight Effect */}
+            <div
+                className="absolute inset-0 transition-opacity duration-300"
+                style={{
+                    background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(168, 85, 247, 0.08), transparent 60%)`
+                }}
+            />
+
+            {/* Pulsing Grid Squares Overlay */}
+            <div className="absolute inset-0 opacity-[0.05]">
+                {[...Array(30)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="absolute bg-white/20 animate-pulse"
+                        style={{
+                            width: '40px',
+                            height: '40px',
+                            left: `${Math.random() * 100}%`,
+                            top: `${Math.random() * 100}%`,
+                            animationDuration: `${3 + Math.random() * 7}s`,
+                            animationDelay: `${Math.random() * 5}s`,
+                            opacity: 0.1 + Math.random() * 0.4
+                        }}
+                    />
+                ))}
+            </div>
+            {/* Fine Grid */}
+            <div className="absolute inset-0 bg-grid opacity-[0.04]" />
+        </div>
+    )
+}
+
 function CharacterPeeker() {
     return (
         <div className="absolute -left-20 top-1/2 -translate-y-1/2 rotate-[160deg] pointer-events-none z-0">
@@ -373,8 +418,8 @@ export default function DealClient({ dealId }: Props) {
 
     return (
         <div className="min-h-screen bg-[#050505] relative overflow-hidden font-sans pb-20">
+            <GlobalInteractiveGrid />
             <div className="bg-noise" />
-            <div className="absolute inset-0 bg-grid opacity-[0.03] pointer-events-none" />
 
             <header className="relative z-20 border-b-8 border-white bg-[#050505]">
                 <div className="max-w-[1400px] mx-auto px-10 py-8 flex justify-between items-center">
