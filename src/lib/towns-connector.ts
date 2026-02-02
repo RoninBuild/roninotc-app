@@ -70,6 +70,7 @@ export function townsConnector() {
         async isAuthorized() {
             try {
                 const provider = await sdk.wallet.getEthereumProvider()
+                if (!provider) return false
                 const accounts = await provider.request({ method: 'eth_accounts' }) as Address[]
                 return accounts.length > 0
             } catch {
