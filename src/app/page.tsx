@@ -13,46 +13,79 @@ export default function Home() {
     }
   }
 
+  // Mouse tracking for grid/character effect
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY })
+  }
+
   return (
-    <div className="min-h-screen flex flex-col justify-center bg-background bg-grid relative overflow-hidden animate-wave bg-[linear-gradient(to_right,#050505,#0a0a0a,#050505)]">
+    <div
+      className="min-h-screen flex flex-col justify-center bg-background bg-grid relative overflow-hidden"
+      onMouseMove={handleMouseMove}
+    >
 
-      {/* Background Ambience - Living Wave */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-blue-600/10 blur-[150px] rounded-full pointer-events-none opacity-40 animate-pulse duration-[5000ms]" />
-      <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-[#A855F7]/10 blur-[150px] rounded-full pointer-events-none opacity-30 animate-pulse duration-[7000ms]" />
+      {/* Interactive Spotlight & Character Reveal */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(29, 78, 216, 0.08), transparent 60%)`
+        }}
+      />
 
-      {/* Hero Section */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-start justify-center min-h-[85vh] px-6 md:px-0">
+      {/* The Ronin Character (Peeking from darkness) */}
+      <div
+        className="absolute bottom-[-50px] right-[-100px] md:right-[5%] md:bottom-[-20px] w-[500px] h-[500px] opacity-10 pointer-events-none transition-all duration-700 ease-out"
+        style={{
+          transform: `translate(${mousePos.x * 0.02}px, ${mousePos.y * 0.02}px)`,
+          filter: `brightness(${1 + (mousePos.x / 1000)}) drop-shadow(0 0 30px rgba(105, 90, 246, 0.2))`
+        }}
+      >
+        <img src="/assets/ronin.png" alt="Ronin Character" className="w-full h-full object-contain mix-blend-screen opacity-60" />
+        {/* Glowing Eyes Effect */}
+        <div className="absolute top-[38%] left-[42%] w-3 h-1 bg-purple-400 blur-[2px] animate-pulse shadow-[0_0_15px_#A855F7]" />
+        <div className="absolute top-[38%] left-[55%] w-3 h-1 bg-purple-400 blur-[2px] animate-pulse shadow-[0_0_15px_#A855F7]" />
+      </div>
 
-        {/* Badge - Shimmering Text */}
-        <div className="mb-10 opacity-0 animate-[fadeIn_0.8s_ease-out_forwards]">
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-[#A855F7]/50 transition-colors">
-            <div className="w-2 h-2 rounded-full bg-[#A855F7] animate-pulse shadow-[0_0_10px_#A855F7]" />
-            <span className="font-sans font-bold text-sm tracking-widest text-transparent bg-clip-text bg-[linear-gradient(110deg,#9333ea,45%,#ffffff,55%,#9333ea)] bg-[length:250%_100%] animate-shimmer uppercase">
-              RoninOTC
-            </span>
+      {/* Hero Section - Moved Higher */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-start justify-center min-h-[75vh] px-8 md:px-12 -mt-20">
+
+        {/* Badge - Separate Pills */}
+        <div className="mb-12 opacity-0 animate-[fadeIn_0.8s_ease-out_forwards]">
+          <div className="inline-flex items-center gap-3">
+            <div className="px-4 py-1.5 rounded-full bg-white/10 border border-white/10 backdrop-blur-md">
+              <span className="font-bold text-sm tracking-widest text-[#A855F7] uppercase shadow-purple-500/20 drop-shadow-lg">
+                RONIN
+              </span>
+            </div>
+            <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/5 backdrop-blur-md">
+              <span className="font-bold text-sm tracking-widest text-white uppercase opacity-80">
+                OTC
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Main Title - Heavy Sans Serif, Towns Style */}
-        <h1 className="font-sans text-7xl md:text-9xl font-black tracking-tighter text-white leading-[0.9] mb-12 opacity-0 animate-[slideUp_0.8s_ease-out_0.2s_forwards]">
+        {/* Main Title */}
+        <h1 className="font-sans text-8xl md:text-[10rem] font-black tracking-tighter text-white leading-[0.85] mb-12 opacity-0 animate-[slideUp_0.8s_ease-out_0.2s_forwards]">
           Secure. <br />
           Trustless. <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-[#A855F7]">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E2E8F0] to-[#A855F7]">
             Towns.
           </span>
         </h1>
 
-        <p className="text-xl md:text-2xl text-secondary max-w-2xl font-medium mb-16 leading-relaxed opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards]">
+        <p className="text-2xl md:text-3xl text-secondary max-w-2xl font-semibold mb-16 leading-relaxed opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards] tracking-tight">
           The first specialized OTC protocol on Base. <br />
-          Built for the Towns ecosystem.
+          Built for the <span className="text-white">Towns</span> ecosystem.
         </p>
 
-        {/* Code Input Box - Refined */}
-        <div className="w-full max-w-lg relative group opacity-0 animate-[fadeIn_1s_ease-out_0.6s_forwards]">
-          <div className="absolute -inset-1 bg-gradient-to-r from-[#A855F7] to-blue-600 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
+        {/* Input Box */}
+        <div className="w-full max-w-xl relative group opacity-0 animate-[fadeIn_1s_ease-out_0.6s_forwards]">
+          <div className="absolute -inset-1 bg-gradient-to-r from-[#A855F7] to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-500" />
 
-          <div className="relative flex items-center bg-[#080808] border border-white/10 rounded-xl p-2 shadow-2xl">
-            <div className="pl-5 pr-3 text-[#A855F7] font-mono text-lg select-none pointer-events-none font-bold">
+          <div className="relative flex items-center bg-[#050505] border border-white/10 rounded-2xl p-2.5 shadow-2xl">
+            <div className="pl-6 pr-4 text-[#A855F7] font-mono text-xl select-none pointer-events-none font-black">
               {`>`}
             </div>
             <input
@@ -60,20 +93,20 @@ export default function Home() {
               value={dealId}
               onChange={(e) => setDealId(e.target.value)}
               placeholder="Enter Deal ID..."
-              className="flex-1 bg-transparent border-none text-white px-2 py-4 focus:outline-none placeholder:text-gray-600 font-sans font-bold text-lg tracking-wide"
+              className="flex-1 bg-transparent border-none text-white px-2 py-4 focus:outline-none placeholder:text-gray-500 font-sans font-bold text-xl tracking-wide"
               onKeyPress={(e) => e.key === 'Enter' && handleOpenDeal()}
               autoFocus
             />
             <button
               onClick={handleOpenDeal}
               disabled={!dealId.trim()}
-              className="bg-white text-black hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed font-bold font-sans py-3 px-8 rounded-lg transition-all text-sm uppercase tracking-wider"
+              className="bg-white text-black hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed font-black font-sans py-4 px-10 rounded-xl transition-all text-sm uppercase tracking-widest shadow-lg"
             >
               Enter
             </button>
           </div>
         </div>
-        {/* Footer hidden/minimal as requested */}
+
       </div>
     </div>
   )
