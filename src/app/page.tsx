@@ -14,72 +14,62 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">
+    <div className="min-h-screen flex flex-col justify-center bg-background bg-grid relative overflow-hidden">
 
       {/* Background Ambience - Blue glow from top */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-blue-600/20 blur-[120px] rounded-full pointer-events-none opacity-50" />
 
       {/* Hero Section */}
-      <div className="relative z-10 max-w-4xl w-full text-center space-y-8">
+      <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-start justify-center min-h-[80vh] px-4 md:px-0">
 
-        {/* Small Pill Label */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-          <span className="text-xs font-medium text-blue-200">RoninOTC Protocol</span>
+        {/* Badge */}
+        <div className="mb-6">
+          <span className="font-mono text-xs md:text-sm text-secondary tracking-wider">
+            () <span className="text-white font-bold ml-1">RoninOTC</span>
+          </span>
         </div>
 
-        {/* Main Title */}
-        <h1 className="text-6xl md:text-8xl font-bold tracking-tight text-white leading-[1.1]">
-          Secure OTC <br />
-          <span className="relative inline-block text-white">
-            Trading
-            {/* Scribble Underline SVG */}
-            <svg className="absolute -bottom-2 w-full h-3 text-blue-600" viewBox="0 0 100 10" preserveAspectRatio="none">
-              <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="3" fill="none" />
-            </svg>
-          </span>
+        {/* Main Title - Left Aligned, Huge */}
+        <h1 className="text-6xl md:text-8xl font-bold tracking-tighter text-white leading-[1] mb-8">
+          Secure. <br />
+          Trustless. <br />
+          OTC.
         </h1>
 
-        <p className="text-lg md:text-xl text-secondary max-w-2xl mx-auto font-light">
-          Trustless peer-to-peer deals on Base. <br className="hidden md:block" />
+        <p className="text-lg text-secondary max-w-xl font-light mb-12 leading-relaxed">
+          A protocol for peer-to-peer deals on Base. <br />
           No middleman. No headaches. Just safe swaps.
         </p>
 
-        {/* Search Input Box (Replacing the old button) */}
-        <div className="w-full max-w-md mx-auto mt-12 relative group">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl opacity-30 group-hover:opacity-60 blur transition duration-500" />
-          <div className="relative flex items-center bg-[#0A0A0A] rounded-xl p-2 shadow-2xl border border-white/10">
-            <div className="pl-4 text-secondary">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+        {/* Code Input Box */}
+        <div className="w-full max-w-lg relative group">
+          {/* Glowing border effect */}
+          <div className="absolute -inset-0.5 bg-white/20 rounded-lg blur opacity-30 duration-500 animate-pulse" />
+
+          <div className="relative flex items-center bg-[#000000] border border-white/20 rounded-lg p-1">
+            <div className="pl-4 pr-2 text-secondary font-mono select-none pointer-events-none">
+              {`>`}
             </div>
             <input
               type="text"
               value={dealId}
               onChange={(e) => setDealId(e.target.value)}
-              placeholder="Search Deal ID..."
-              className="flex-1 bg-transparent border-none text-white px-4 py-3 focus:outline-none placeholder:text-gray-600 text-lg"
+              placeholder="Type deal id..."
+              className="flex-1 bg-transparent border-none text-white px-2 py-4 focus:outline-none placeholder:text-gray-700 font-mono text-base md:text-lg"
               onKeyPress={(e) => e.key === 'Enter' && handleOpenDeal()}
+              autoFocus
             />
             <button
               onClick={handleOpenDeal}
               disabled={!dealId.trim()}
-              className="bg-white text-black hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold py-3 px-6 rounded-lg transition-all"
+              className="bg-white text-black hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed font-bold font-mono py-2 px-6 rounded-md transition-all text-sm uppercase tracking-wide"
             >
-              Search
+              Enter
             </button>
           </div>
         </div>
 
-        {/* Footer/Features minimal */}
-        <div className="pt-20 flex justify-center gap-12 text-sm text-secondary font-medium uppercase tracking-wider opacity-60">
-          <div className="flex items-center gap-2">
-            <span>🔒</span> Smart Contracts
-          </div>
-          <div className="flex items-center gap-2">
-            <span>⚡</span> Instant Setlement
-          </div>
-        </div>
-
+        {/* Footer hidden/minimal as requested */}
       </div>
     </div>
   )

@@ -10,7 +10,14 @@
   --font-mono: var(--font-space-mono), monospace;
 }
 
-/* Custom Utilities if needed */
+/* Custom Utilities */
+@utility bg-grid {
+  background-size: 50px 50px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
 body {
   color: #ffffff;
   background-color: var(--color-background);
