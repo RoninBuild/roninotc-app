@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function Home() {
+function HomeContent() {
   const [dealId, setDealId] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -129,5 +129,17 @@ export default function Home() {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   )
 }
