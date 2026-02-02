@@ -40,6 +40,9 @@ export default function DealClient({ dealId }: Props) {
     const { isLoading: isReleaseConfirming, isSuccess: isReleaseSuccess } = useWaitForTransactionReceipt({ hash: releaseHash })
     const { isLoading: isRefundConfirming, isSuccess: isRefundSuccess } = useWaitForTransactionReceipt({ hash: refundHash })
 
+    const isSeller = address?.toLowerCase() === deal?.seller_address?.toLowerCase()
+    const isBuyer = address?.toLowerCase() === deal?.buyer_address?.toLowerCase()
+
     // Check USDC allowance for buyer
     const { data: allowance, refetch: refetchAllowance } = useReadContract({
         address: USDC_ADDRESS,
@@ -54,6 +57,14 @@ export default function DealClient({ dealId }: Props) {
         abi: factoryAbi,
         functionName: 'getBuyerEscrows',
         args: deal?.buyer_address ? [deal.buyer_address as `0x${string}`] : undefined,
+    })
+
+    // Read seller's escrows from blockchain
+    const { data: sellerEscrows, refetch: refetchSellerEscrows } = useReadContract({
+        address: FACTORY_ADDRESS,
+        abi: factoryAbi,
+        functionName: 'getSellerEscrows',
+        args: deal?.seller_address ? [deal.seller_address as `0x${string}`] : undefined,
     })
 
     // Read escrow contract status (if we have an escrow address)
@@ -94,25 +105,39 @@ export default function DealClient({ dealId }: Props) {
         console.log('🔄 Syncing blockchain state...')
 
         try {
-            // Step 1: Check if escrow exists for this buyer
-            if (!onChainEscrow && deal.buyer_address) {
-                const result = await refetchBuyerEscrows()
-                const escrows = result.data as `0x${string}`[] | undefined
+            // Step 1: Check if escrow exists on-chain
+            if (!onChainEscrow) {
+                let escrows: `0x${string}`[] | undefined;
+
+                // If buyer is viewing, check buyer list. If seller, check seller list.
+                if (deal.buyer_address) {
+                    const result = await refetchBuyerEscrows()
+                    escrows = result.data as `0x${string}`[] | undefined
+                }
+
+                if ((!escrows || escrows.length === 0) && deal.seller_address) {
+                    const result = await refetchSellerEscrows()
+                    escrows = result.data as `0x${string}`[] | undefined
+                }
 
                 if (escrows && escrows.length > 0) {
-                    // For now, use the latest escrow. TODO: match by memoHash
-                    const latestEscrow = escrows[escrows.length - 1]
-                    console.log('✅ Found escrow on-chain:', latestEscrow)
-                    setOnChainEscrow(latestEscrow)
+                    // Start from the most recent
+                    const sortedEscrows = [...escrows].reverse()
 
-                    // Update local deal state
-                    setDeal(prev => prev ? { ...prev, escrow_address: latestEscrow, status: 'created' as Deal['status'] } : prev)
+                    for (const escrowAddr of sortedEscrows) {
+                        console.log('✅ Found escrow on-chain matching role:', escrowAddr)
+                        setOnChainEscrow(escrowAddr)
 
-                    // Try to update API in background
-                    try {
-                        await updateDealStatus(deal.deal_id, 'created', latestEscrow)
-                    } catch (e) {
-                        console.warn('API sync failed:', e)
+                        // Update local deal state
+                        setDeal(prev => prev ? { ...prev, escrow_address: escrowAddr, status: 'created' as Deal['status'] } : prev)
+
+                        // Try to update API in background
+                        try {
+                            await updateDealStatus(deal.deal_id, 'created', escrowAddr)
+                        } catch (e) {
+                            console.warn('API sync failed:', e)
+                        }
+                        break;
                     }
                 }
             }
@@ -349,8 +374,6 @@ export default function DealClient({ dealId }: Props) {
         return configs[status] || { color: 'text-gray-400', bg: 'bg-gray-500/10 border-gray-500/30', emoji: '❓' }
     }
 
-    const isSeller = address?.toLowerCase() === deal?.seller_address?.toLowerCase()
-    const isBuyer = address?.toLowerCase() === deal?.buyer_address?.toLowerCase()
     const isAnyTxPending = isCreating || isApproving || isFunding || isReleasing || isRefunding ||
         isCreateConfirming || isApproveConfirming || isFundConfirming || isReleaseConfirming || isRefundConfirming
 
