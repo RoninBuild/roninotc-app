@@ -40,6 +40,18 @@ export const metadata: Metadata = {
         },
       },
     }),
+    'fc:miniapp': JSON.stringify({
+      version: '1',
+      imageUrl: 'https://roninotc-app.vercel.app/logo.png',
+      button: {
+        title: 'Launch RoninOTC',
+        action: {
+          type: 'launch_app',
+          name: 'RoninOTC',
+          url: 'https://roninotc-app.vercel.app',
+        },
+      },
+    }),
     'fc:frame:image': 'https://roninotc-app.vercel.app/logo.png',
     'fc:frame:button:1': 'Launch RoninOTC',
     'fc:frame:button:1:action': 'launch_frame',
