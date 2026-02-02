@@ -32,7 +32,12 @@ export default function RootLayout({
                   {/* Logo Area (Empty or minimal as per ref) */}
                   <div className="flex items-center gap-6 text-sm font-medium">
                     <span className="text-white border-b border-white pb-0.5">OTC</span>
-                    <span className="text-secondary cursor-not-allowed hover:text-gray-500 transition-colors">PreMarket</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-secondary cursor-not-allowed hover:text-gray-500 transition-colors">PreMarket</span>
+                      <span className="text-[10px] uppercase tracking-wider bg-white/10 text-white/70 px-1.5 py-0.5 rounded-sm">
+                        Coming Soon
+                      </span>
+                    </div>
                   </div>
                 </div>
 

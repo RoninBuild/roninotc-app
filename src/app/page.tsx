@@ -22,27 +22,27 @@ export default function Home() {
       {/* Hero Section */}
       <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-start justify-center min-h-[80vh] px-4 md:px-0">
 
-        {/* Badge */}
-        <div className="mb-6">
-          <span className="font-mono text-xs md:text-sm text-secondary tracking-wider">
-            () <span className="text-white font-bold ml-1">RoninOTC</span>
+        {/* Badge - Larger */}
+        <div className="mb-8 opacity-0 animate-[fadeIn_0.8s_ease-out_forwards]">
+          <span className="font-mono text-sm md:text-base text-secondary tracking-wider">
+            () <span className="text-white font-bold ml-1 text-lg">RoninOTC</span>
           </span>
         </div>
 
-        {/* Main Title - Left Aligned, Huge */}
-        <h1 className="text-6xl md:text-8xl font-bold tracking-tighter text-white leading-[1] mb-8">
+        {/* Main Title - Mono Font, "Towns" */}
+        <h1 className="font-mono text-5xl md:text-7xl font-bold tracking-tight text-white leading-[1.1] mb-8 opacity-0 animate-[slideUp_0.8s_ease-out_0.2s_forwards]">
           Secure. <br />
           Trustless. <br />
-          OTC.
+          Towns.
         </h1>
 
-        <p className="text-lg text-secondary max-w-xl font-light mb-12 leading-relaxed">
+        <p className="text-lg text-secondary max-w-xl font-light mb-12 leading-relaxed opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards]">
           A protocol for peer-to-peer deals on Base. <br />
           No middleman. No headaches. Just safe swaps.
         </p>
 
         {/* Code Input Box */}
-        <div className="w-full max-w-lg relative group">
+        <div className="w-full max-w-lg relative group opacity-0 animate-[fadeIn_1s_ease-out_0.6s_forwards]">
           {/* Glowing border effect */}
           <div className="absolute -inset-0.5 bg-white/20 rounded-lg blur opacity-30 duration-500 animate-pulse" />
 
