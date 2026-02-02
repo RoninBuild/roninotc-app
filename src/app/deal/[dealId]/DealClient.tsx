@@ -189,6 +189,12 @@ export default function DealClient({ dealId }: Props) {
         args: address && onChainEscrow ? [address, onChainEscrow] : undefined,
     })
 
+    useEffect(() => {
+        if (onChainEscrow) {
+            refetchAllowance()
+        }
+    }, [onChainEscrow, address])
+
     // Logic Functions
     const loadDeal = async (showLoading = true) => {
         try {
@@ -296,19 +302,20 @@ export default function DealClient({ dealId }: Props) {
                         const escrowAddressTopic = log.topics[1]
                         if (escrowAddressTopic) {
                             const escrowAddress = `0x${escrowAddressTopic.slice(-40)}` as `0x${string}`
+                            setOnChainEscrow(escrowAddress)
                             setDeal(prev => prev ? { ...prev, status: 'created' as Deal['status'], escrow_address: escrowAddress } : prev)
                             setTxStatus('Escrow Deployed!')
-                            try { await updateDealStatus(deal.deal_id, 'created', escrowAddress) } catch (e) { }
+                            updateDealStatus(deal.deal_id, 'created', escrowAddress).catch(() => { })
                             return
                         }
                     }
                 }
                 setOnChainEscrow(null)
-                await syncBlockchainState()
+                syncBlockchainState()
             }
             handleSuccess()
         }
-    }, [isCreateSuccess, createReceipt, deal])
+    }, [isCreateSuccess, createReceipt])
 
     useEffect(() => {
         if (isFundSuccess || isReleaseSuccess || isRefundSuccess || isDisputeSuccess) {
@@ -389,7 +396,9 @@ export default function DealClient({ dealId }: Props) {
     const isAnyTxPending = isCreating || isApproving || isFunding || isReleasing || isRefunding ||
         isCreateConfirming || isApproveConfirming || isFundConfirming || isReleaseConfirming || isRefundConfirming
 
-    const needsApproval = !!(deal?.escrow_address && allowance !== undefined && allowance < parseUsdcAmount(deal.amount))
+    // Use BigInt(0) if allowance is loading/undefined to force approval check
+    const currentAllowance = allowance !== undefined ? allowance : BigInt(0)
+    const needsApproval = !!(onChainEscrow && currentAllowance < parseUsdcAmount(deal?.amount || 0))
     const isDeadlinePassed = deal ? Date.now() > deal.deadline * 1000 : false
 
     if (loading) {
