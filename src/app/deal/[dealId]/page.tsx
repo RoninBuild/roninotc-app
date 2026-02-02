@@ -186,8 +186,8 @@ export default function DealPage() {
   const isAnyTxPending = isCreating || isApproving || isFunding || isReleasing || isRefunding ||
     isCreateConfirming || isApproveConfirming || isFundConfirming || isReleaseConfirming || isRefundConfirming
 
-  const needsApproval = deal?.escrow_address && allowance !== undefined &&
-    allowance < parseUsdcAmount(deal.amount)
+  const needsApproval = !!(deal?.escrow_address && allowance !== undefined &&
+    allowance < parseUsdcAmount(deal.amount))
 
   // Loading State
   if (loading) {
