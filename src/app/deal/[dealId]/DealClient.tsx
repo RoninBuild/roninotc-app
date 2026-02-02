@@ -22,6 +22,10 @@ export default function DealClient({ dealId }: Props) {
     const [txStatus, setTxStatus] = useState<string | null>(null)
     const [isCheckingBlockchain, setIsCheckingBlockchain] = useState(false)
 
+    // On-chain state (source of truth)
+    const [onChainEscrow, setOnChainEscrow] = useState<`0x${string}` | null>(null)
+    const [onChainStatus, setOnChainStatus] = useState<number | null>(null) // 0=Unfunded, 1=Funded, 2=Released, 3=Refunded, 4=Disputed
+
     // Contract write hooks
     const { writeContract: createEscrow, data: createHash, isPending: isCreating } = useWriteContract()
     const { writeContract: approveUsdc, data: approveHash, isPending: isApproving } = useWriteContract()
@@ -41,10 +45,10 @@ export default function DealClient({ dealId }: Props) {
         address: USDC_ADDRESS,
         abi: erc20Abi,
         functionName: 'allowance',
-        args: address && deal?.escrow_address ? [address, deal.escrow_address as `0x${string}`] : undefined,
+        args: address && onChainEscrow ? [address, onChainEscrow] : undefined,
     })
 
-    // Read buyer's escrows from blockchain to check if contract was created
+    // Read buyer's escrows from blockchain
     const { data: buyerEscrows, refetch: refetchBuyerEscrows } = useReadContract({
         address: FACTORY_ADDRESS,
         abi: factoryAbi,
@@ -52,7 +56,15 @@ export default function DealClient({ dealId }: Props) {
         args: deal?.buyer_address ? [deal.buyer_address as `0x${string}`] : undefined,
     })
 
-    // Load deal with loading indicator (for initial load)
+    // Read escrow contract status (if we have an escrow address)
+    const { data: escrowInfo, refetch: refetchEscrowInfo } = useReadContract({
+        address: onChainEscrow || undefined,
+        abi: escrowAbi,
+        functionName: 'getDealInfo',
+        args: onChainEscrow ? [] : undefined,
+    })
+
+    // Load deal from API
     const loadDeal = async (showLoading = true) => {
         try {
             if (showLoading) setLoading(true)
@@ -62,6 +74,10 @@ export default function DealClient({ dealId }: Props) {
             } else {
                 setDeal(data)
                 setError(null)
+                // If API has escrow address, use it
+                if (data.escrow_address) {
+                    setOnChainEscrow(data.escrow_address as `0x${string}`)
+                }
             }
         } catch (err) {
             if (showLoading) setError('Failed to load deal')
@@ -71,71 +87,99 @@ export default function DealClient({ dealId }: Props) {
         }
     }
 
-    // Silent refresh for background updates (no loading flicker)
-    const silentRefresh = async () => {
+    // Sync blockchain state - the main function that keeps UI in sync with chain
+    const syncBlockchainState = async () => {
+        if (!deal) return
+
+        console.log('🔄 Syncing blockchain state...')
+
         try {
-            const data = await getDeal(dealId)
-            if (data) {
-                setDeal(data)
+            // Step 1: Check if escrow exists for this buyer
+            if (!onChainEscrow && deal.buyer_address) {
+                const result = await refetchBuyerEscrows()
+                const escrows = result.data as `0x${string}`[] | undefined
+
+                if (escrows && escrows.length > 0) {
+                    // For now, use the latest escrow. TODO: match by memoHash
+                    const latestEscrow = escrows[escrows.length - 1]
+                    console.log('✅ Found escrow on-chain:', latestEscrow)
+                    setOnChainEscrow(latestEscrow)
+
+                    // Update local deal state
+                    setDeal(prev => prev ? { ...prev, escrow_address: latestEscrow, status: 'created' as Deal['status'] } : prev)
+
+                    // Try to update API in background
+                    try {
+                        await updateDealStatus(deal.deal_id, 'created', latestEscrow)
+                    } catch (e) {
+                        console.warn('API sync failed:', e)
+                    }
+                }
             }
-        } catch (err) {
-            console.error('Silent refresh failed:', err)
-        }
-    }
 
-    // Check blockchain for escrow and update status if found
-    const checkBlockchainForEscrow = async () => {
-        if (!deal || deal.status !== 'draft' || !deal.buyer_address) return
+            // Step 2: If we have escrow, read its on-chain status
+            if (onChainEscrow) {
+                const infoResult = await refetchEscrowInfo()
+                const info = infoResult.data as readonly [string, string, string, bigint, bigint, string, string, number, bigint] | undefined
 
-        setIsCheckingBlockchain(true)
-        setTxStatus('Checking blockchain for escrow contract...')
+                if (info) {
+                    const chainStatus = info[7] // _status field
+                    console.log('📊 On-chain status:', chainStatus)
+                    setOnChainStatus(chainStatus)
 
-        try {
-            // Refetch buyer escrows from blockchain
-            const result = await refetchBuyerEscrows()
-            const escrows = result.data as `0x${string}`[] | undefined
+                    // Map on-chain status to deal status
+                    const statusMap: Record<number, string> = {
+                        0: 'created',   // Unfunded
+                        1: 'funded',    // Funded
+                        2: 'released',  // Released
+                        3: 'refunded',  // Refunded
+                        4: 'disputed',  // Disputed
+                    }
 
-            console.log('Buyer escrows from blockchain:', escrows)
+                    const newStatus = statusMap[chainStatus] || 'created'
+                    if (deal.status !== newStatus) {
+                        console.log(`🔄 Updating status: ${deal.status} → ${newStatus}`)
+                        setDeal(prev => prev ? { ...prev, status: newStatus as Deal['status'] } : prev)
 
-            if (escrows && escrows.length > 0) {
-                // Get the latest escrow (last in array)
-                const latestEscrow = escrows[escrows.length - 1]
-                console.log('Latest escrow found:', latestEscrow)
-
-                // Try to update API
-                try {
-                    await updateDealStatus(deal.deal_id, 'created', latestEscrow)
-                    setTxStatus('Escrow found! Updating status...')
-                } catch (apiErr) {
-                    console.error('API update failed, but escrow exists:', apiErr)
-                    // Even if API fails, update local state
-                    setDeal(prev => prev ? { ...prev, status: 'created', escrow_address: latestEscrow } : prev)
-                    setTxStatus('Escrow contract found on blockchain!')
+                        // Try to update API
+                        try {
+                            await updateDealStatus(deal.deal_id, newStatus, onChainEscrow)
+                        } catch (e) {
+                            console.warn('API sync failed:', e)
+                        }
+                    }
                 }
 
-                // Refresh deal data
-                await silentRefresh()
-            } else {
-                setTxStatus('No escrow found yet. Will check again...')
+                // Also refresh allowance
+                await refetchAllowance()
             }
         } catch (err) {
-            console.error('Blockchain check failed:', err)
-            setTxStatus('Checking...')
-        } finally {
-            setIsCheckingBlockchain(false)
+            console.error('Blockchain sync error:', err)
         }
     }
 
+    // Initial load
     useEffect(() => {
-        loadDeal(true) // Initial load with spinner
+        loadDeal(true)
+    }, [dealId])
 
-        // Silent refresh every 5 seconds (no loading flicker)
+    // Sync blockchain state when deal loads or escrow changes
+    useEffect(() => {
+        if (deal) {
+            syncBlockchainState()
+        }
+    }, [deal?.deal_id, deal?.buyer_address])
+
+    // Periodic blockchain sync (every 5 seconds)
+    useEffect(() => {
+        if (!deal) return
+
         const interval = setInterval(() => {
-            silentRefresh()
+            syncBlockchainState()
         }, 5000)
 
         return () => clearInterval(interval)
-    }, [dealId])
+    }, [deal, onChainEscrow])
 
     // Handle Deal Creation Success - use blockchain verification
     useEffect(() => {
@@ -155,7 +199,7 @@ export default function DealClient({ dealId }: Props) {
                             console.log('Extracted escrow address:', escrowAddress)
 
                             // Update local state immediately
-                            setDeal(prev => prev ? { ...prev, status: 'created', escrow_address: escrowAddress } : prev)
+                            setDeal(prev => prev ? { ...prev, status: 'created' as Deal['status'], escrow_address: escrowAddress } : prev)
                             setTxStatus('Escrow created successfully!')
 
                             // Try API update in background
@@ -169,9 +213,10 @@ export default function DealClient({ dealId }: Props) {
                     }
                 }
 
-                // Fallback: check blockchain directly
-                console.log('Could not parse logs, checking blockchain...')
-                await checkBlockchainForEscrow()
+                // Fallback: trigger blockchain sync
+                console.log('Could not parse logs, triggering sync...')
+                setOnChainEscrow(null) // Force re-check
+                await syncBlockchainState()
             }
             handleSuccess()
         }
@@ -181,7 +226,7 @@ export default function DealClient({ dealId }: Props) {
     // Reload deal after other successful transactions
     useEffect(() => {
         if (isFundSuccess || isReleaseSuccess || isRefundSuccess) {
-            setTimeout(() => silentRefresh(), 2000)
+            setTimeout(() => syncBlockchainState(), 2000)
         }
     }, [isFundSuccess, isReleaseSuccess, isRefundSuccess])
 
