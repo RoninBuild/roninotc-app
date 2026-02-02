@@ -15,6 +15,28 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: 'RoninOTC - Trustless Escrow on Base',
   description: 'OTC escrow deals on Base with USDC',
+  other: {
+    'fc:frame': JSON.stringify({
+      version: 'next',
+      imageUrl: 'https://roninotc-app.vercel.app/logo.png',
+      button: {
+        title: 'Launch RoninOTC',
+        action: {
+          type: 'launch_app',
+        },
+      },
+    }),
+    'towns:miniapp': JSON.stringify({
+      version: '1',
+      imageUrl: 'https://roninotc-app.vercel.app/logo.png',
+      button: {
+        title: 'Launch RoninOTC',
+        action: {
+          type: 'launch_app',
+        },
+      },
+    }),
+  },
 }
 
 export default function RootLayout({
