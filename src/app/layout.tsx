@@ -23,6 +23,8 @@ export const metadata: Metadata = {
         title: 'Launch RoninOTC',
         action: {
           type: 'launch_app',
+          name: 'RoninOTC',
+          url: 'https://roninotc-app.vercel.app',
         },
       },
     }),
@@ -33,6 +35,8 @@ export const metadata: Metadata = {
         title: 'Launch RoninOTC',
         action: {
           type: 'launch_app',
+          name: 'RoninOTC',
+          url: 'https://roninotc-app.vercel.app',
         },
       },
     }),

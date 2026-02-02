@@ -1,0 +1,17 @@
+{
+    "accountAssociation": {
+        "header": "eyJmaWQiOiA3NjU0MzIxLCAidHlwZSI6ICJjdXN0b2R5IiwgImtleSI6ICIweDYxZEEzMUMzNjZENTY3RDVEZThBOUUwRDBDQTI4MEM3QjNCOTkwMzA2In0",
+        "payload": "eyJkb21haW4iOiAicm9uaW5vdGMtYXBwLnZlcmNlbC5hcHAifQ",
+        "signature": "MHhEOTNCMDZGNTYyNDU1MTU1MkRCOUM5Qzk5Qzk5Qzk5Qzk5Qzk5Qzk5Qzk5Qzk5Qzk5Qzk5Qzk5Qzk5Qzk5Qzk5"
+    },
+    "frame": {
+        "version": "1",
+        "name": "RoninOTC",
+        "iconUrl": "https://roninotc-app.vercel.app/logo.png",
+        "homeUrl": "https://roninotc-app.vercel.app",
+        "imageUrl": "https://roninotc-app.vercel.app/logo.png",
+        "buttonTitle": "Launch RoninOTC",
+        "splashImageUrl": "https://roninotc-app.vercel.app/logo.png",
+        "splashBackgroundColor": "#000000"
+    }
+}
