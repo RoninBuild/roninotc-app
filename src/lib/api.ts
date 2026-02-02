@@ -1,9 +1,11 @@
 ﻿import { config } from './config'
 import type { Deal } from './types'
 
+const API_BASE = config.botApiUrl
+
 export async function getDeal(dealId: string): Promise<Deal | null> {
   try {
-    const res = await fetch(`/api/deal/${dealId}`)
+    const res = await fetch(`${API_BASE}/api/deal/${dealId}`)
     if (!res.ok) return null
     const data = await res.json()
     return data.deal || null
@@ -15,7 +17,7 @@ export async function getDeal(dealId: string): Promise<Deal | null> {
 
 export async function getUserDeals(address: string, role: 'buyer' | 'seller' = 'buyer'): Promise<Deal[]> {
   try {
-    const res = await fetch(`/api/deals/user/${address}?role=${role}`)
+    const res = await fetch(`${API_BASE}/api/deals/user/${address}?role=${role}`)
     if (!res.ok) return []
     const data = await res.json()
     return data.deals || []
@@ -27,7 +29,7 @@ export async function getUserDeals(address: string, role: 'buyer' | 'seller' = '
 
 export async function updateDealStatus(dealId: string, status: string, escrowAddress?: string) {
   try {
-    const res = await fetch(`/api/deal/${dealId}/status`, {
+    const res = await fetch(`${API_BASE}/api/deal/${dealId}/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, escrowAddress })
