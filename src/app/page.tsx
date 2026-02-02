@@ -11,9 +11,9 @@ function HomeContent() {
   useEffect(() => {
     const qDealId = searchParams.get('dealId')
     if (qDealId) {
-      router.push(`/deal/${qDealId}`)
+      setDealId(qDealId)
     }
-  }, [searchParams, router])
+  }, [searchParams])
 
   const handleOpenDeal = () => {
     if (dealId.trim()) {
