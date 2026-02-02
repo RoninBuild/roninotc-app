@@ -14,19 +14,20 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center bg-background bg-grid relative overflow-hidden">
+    <div className="min-h-screen flex flex-col justify-center bg-background bg-grid relative overflow-hidden animate-wave bg-[linear-gradient(to_right,#050505,#0a0a0a,#050505)]">
 
-      {/* Background Ambience - Blue glow from top */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-blue-600/20 blur-[120px] rounded-full pointer-events-none opacity-50" />
+      {/* Background Ambience - Living Wave */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-blue-600/10 blur-[150px] rounded-full pointer-events-none opacity-40 animate-pulse duration-[5000ms]" />
+      <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-[#A855F7]/10 blur-[150px] rounded-full pointer-events-none opacity-30 animate-pulse duration-[7000ms]" />
 
       {/* Hero Section */}
       <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-start justify-center min-h-[85vh] px-6 md:px-0">
 
-        {/* Badge - Larger & Towns Color */}
+        {/* Badge - Shimmering Text */}
         <div className="mb-10 opacity-0 animate-[fadeIn_0.8s_ease-out_forwards]">
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-[#A855F7]/50 transition-colors">
             <div className="w-2 h-2 rounded-full bg-[#A855F7] animate-pulse shadow-[0_0_10px_#A855F7]" />
-            <span className="font-sans font-bold text-sm tracking-widest text-white uppercase">
+            <span className="font-sans font-bold text-sm tracking-widest text-transparent bg-clip-text bg-[linear-gradient(110deg,#9333ea,45%,#ffffff,55%,#9333ea)] bg-[length:250%_100%] animate-shimmer uppercase">
               RoninOTC
             </span>
           </div>
