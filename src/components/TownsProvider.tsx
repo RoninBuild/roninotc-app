@@ -14,7 +14,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
                 console.log('Initializing Towns SDK...')
                 await sdk.actions.ready()
 
-                const context = await sdk.context
+                const context = (await sdk.context) as any
                 console.log('Towns context received:', context)
 
                 if (context?.towns && !isConnected) {
