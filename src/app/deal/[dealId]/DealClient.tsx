@@ -450,7 +450,22 @@ export default function DealClient({ dealId }: Props) {
                         <div className="flex items-center justify-between flex-wrap gap-6">
                             <div>
                                 <h1 className="text-3xl font-black tracking-tight text-white mb-2">Deal Summary</h1>
-                                <p className="font-mono text-sm text-secondary break-all">{deal.deal_id}</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="font-mono text-sm text-secondary break-all">{deal.deal_id}</p>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(deal.deal_id);
+                                            setTxStatus('ID copied to clipboard!');
+                                            setTimeout(() => setTxStatus(null), 2000);
+                                        }}
+                                        className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-secondary hover:text-white"
+                                        title="Copy ID"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                             <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${statusConfig.bg}`}>
                                 <span className="text-2xl">{statusConfig.emoji}</span>
