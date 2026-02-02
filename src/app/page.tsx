@@ -46,7 +46,7 @@ export default function Home() {
         </p>
 
         {/* Search Input Box (Replacing the old button) */}
-        <div className="max-w-md mx-auto mt-12 relative group">
+        <div className="w-full max-w-md mx-auto mt-12 relative group">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl opacity-30 group-hover:opacity-60 blur transition duration-500" />
           <div className="relative flex items-center bg-[#0A0A0A] rounded-xl p-2 shadow-2xl border border-white/10">
             <div className="pl-4 text-secondary">

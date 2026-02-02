@@ -23,7 +23,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`antialiased bg-background text-white ${inter.variable} ${spaceMono.variable}`}>
+      <body className={`antialiased bg-background text-white font-sans ${inter.variable} ${spaceMono.variable}`}>
         <Providers>
           <div className="flex flex-col min-h-screen">
             <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-white/5">
