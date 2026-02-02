@@ -112,7 +112,6 @@ export default function DealClient({ dealId }: Props) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [txStatus, setTxStatus] = useState<string | null>(null)
-    const [isCheckingBlockchain, setIsCheckingBlockchain] = useState(false)
 
     // On-chain state
     const [onChainEscrow, setOnChainEscrow] = useState<`0x${string}` | null>(null)
@@ -341,7 +340,6 @@ export default function DealClient({ dealId }: Props) {
         isCreateConfirming || isApproveConfirming || isFundConfirming || isReleaseConfirming || isRefundConfirming
 
     const needsApproval = !!(deal?.escrow_address && allowance !== undefined && allowance < parseUsdcAmount(deal.amount))
-
     const isDeadlinePassed = deal ? Date.now() > deal.deadline * 1000 : false
 
     if (loading) {
@@ -380,16 +378,16 @@ export default function DealClient({ dealId }: Props) {
 
             <header className="relative z-20 border-b-8 border-white bg-[#050505]">
                 <div className="max-w-[1400px] mx-auto px-10 py-8 flex justify-between items-center">
-                    <Link href="/" className="flex items-center gap-3">
-                        <span className="font-black text-4xl tracking-tighter text-white uppercase">
-                            RONIN OTC
+                    <Link href="/" className="flex items-center gap-3 group">
+                        <span className="font-black text-4xl tracking-tighter text-white uppercase flex items-center gap-2">
+                            RONIN <span className="text-brand-gradient">OTC</span>
                         </span>
                     </Link>
                     <ConnectButton />
                 </div>
             </header>
 
-            <main className="relative z-10 max-w-6xl mx-auto px-10 py-20 space-y-20 animate-[fadeIn_0.5s_ease-out]">
+            <main className="relative z-10 max-w-6xl mx-auto px-10 py-20 space-y-20 animate-[fadeIn_0.5s_ease-out] scale-down-pro">
 
                 {/* Transaction Status Banner */}
                 {isAnyTxPending && (
@@ -403,7 +401,7 @@ export default function DealClient({ dealId }: Props) {
                 <div className="flex flex-col md:flex-row justify-between items-center gap-10 pb-20 border-b-8 border-white">
                     <div className="text-center md:text-left space-y-4">
                         <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white uppercase leading-none">
-                            DEAL SUMMARY
+                            DEAL <span className="text-brand-gradient">SUMMARY</span>
                         </h1>
                         <div className="flex items-center justify-center md:justify-start gap-4">
                             <p className="font-code text-zinc-500 text-2xl">ID: {deal.deal_id}</p>
@@ -429,8 +427,20 @@ export default function DealClient({ dealId }: Props) {
                         <div className="space-y-12">
                             <div className="space-y-4">
                                 <label className="text-sm text-zinc-500 uppercase tracking-[0.3em] font-black ml-1">SELLER</label>
-                                <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative">
+                                <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
                                     {deal.seller_address}
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(deal.seller_address);
+                                            setTxStatus('ADDRESS COPIED');
+                                            setTimeout(() => setTxStatus(null), 2000);
+                                        }}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover/addr:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-white"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                        </svg>
+                                    </button>
                                     {isSeller && (
                                         <span className="absolute -top-4 -right-4 px-3 py-1 bg-white text-black text-xs font-black uppercase shadow-xl transform rotate-3">YOU</span>
                                     )}
@@ -438,8 +448,20 @@ export default function DealClient({ dealId }: Props) {
                             </div>
                             <div className="space-y-4">
                                 <label className="text-sm text-zinc-500 uppercase tracking-[0.3em] font-black ml-1">BUYER</label>
-                                <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative">
+                                <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
                                     {deal.buyer_address}
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(deal.buyer_address);
+                                            setTxStatus('ADDRESS COPIED');
+                                            setTimeout(() => setTxStatus(null), 2000);
+                                        }}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover/addr:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-white"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                        </svg>
+                                    </button>
                                     {isBuyer && (
                                         <span className="absolute -top-4 -right-4 px-3 py-1 bg-white text-black text-xs font-black uppercase shadow-xl transform -rotate-3">YOU</span>
                                     )}
@@ -574,19 +596,35 @@ export default function DealClient({ dealId }: Props) {
                             <p className="text-zinc-500 text-2xl font-bold max-w-xl">Fully decentralized OTC trading with transparent fee structures.</p>
                             <div className="flex flex-wrap justify-center gap-8">
                                 <div className="px-10 py-6 bg-white text-black font-black uppercase tracking-widest text-3xl border-b-[10px] border-zinc-300">0.5% STD</div>
-                                <div className="px-10 py-6 border-4 border-white text-white font-black uppercase tracking-widest text-3xl opacity-30">$TOWNS 0.1%</div>
+                                <div className="px-10 py-6 border-4 border-white text-white font-black uppercase tracking-widest text-3xl bg-towns-hover cursor-help">
+                                    $ <span className="text-brand-gradient">TOWNS</span> 0.1%
+                                </div>
                             </div>
                         </div>
                     </Card>
 
                     {deal.escrow_address && (
-                        <div className="border-[8px] border-white p-12 bg-[#09090b] relative group">
+                        <div className="border-[8px] border-white p-12 bg-[#09090b] relative group/contract">
                             <div className="absolute top-0 right-10 -translate-y-1/2 bg-white text-black px-6 py-2 font-black uppercase text-sm tracking-widest">VERIFIED CONTRACT</div>
                             <div className="space-y-6">
                                 <label className="text-sm text-zinc-500 font-black uppercase tracking-[0.4em]">ON-CHAIN PROTOCOL ADDRESS</label>
-                                <a href={`https://basescan.org/address/${deal.escrow_address}`} target="_blank" rel="noopener noreferrer" className="font-code text-3xl text-white hover:text-zinc-300 break-all block leading-tight underline decoration-8 underline-offset-10">
-                                    {deal.escrow_address}
-                                </a>
+                                <div className="relative group/addr">
+                                    <a href={`https://basescan.org/address/${deal.escrow_address}`} target="_blank" rel="noopener noreferrer" className="font-code text-3xl text-white hover:text-zinc-300 break-all block leading-tight underline decoration-8 underline-offset-10">
+                                        {deal.escrow_address}
+                                    </a>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(deal.escrow_address!);
+                                            setTxStatus('CONTRACT COPIED');
+                                            setTimeout(() => setTxStatus(null), 2000);
+                                        }}
+                                        className="absolute -right-12 top-1/2 -translate-y-1/2 opacity-0 group-hover/addr:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-white"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}

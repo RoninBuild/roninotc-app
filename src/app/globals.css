@@ -131,8 +131,35 @@
   z-index: 0;
 }
 
+.text-brand-gradient {
+  background: linear-gradient(to right, #ffffff 40%, #A855F7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-towns-hover {
+  transition: background-color 0.8s ease-out;
+}
+
+.bg-towns-hover:hover {
+  background-color: rgba(168, 85, 247, 0.2);
+  border-color: #A855F7;
+}
+
 .character-eye {
   animation: blink 4s infinite;
+}
+
+.scale-down-pro {
+  zoom: 0.75;
+}
+
+@supports not (zoom: 0.75) {
+  .scale-down-pro {
+    transform: scale(0.75);
+    transform-origin: top center;
+  }
 }
 
 body {
