@@ -361,349 +361,299 @@ export default function DealClient({ dealId }: Props) {
     const isDeadlinePassed = Date.now() > deal.deadline * 1000
 
     return (
-        <div
-            className="min-h-screen bg-background bg-grid relative overflow-hidden"
-            onMouseMove={handleMouseMove}
-        >
-            {/* Spotlight Effect */}
-            <div
-                className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
-                style={{
-                    background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(168, 85, 247, 0.05), transparent 60%)`
-                }}
-            />
+        <div className="min-h-screen bg-[#050505] relative overflow-hidden font-sans">
+            {/* Grain Overlay */}
+            <div className="bg-noise" />
+
+            {/* Subtle Grid */}
+            <div className="absolute inset-0 bg-grid opacity-[0.03] pointer-events-none" />
 
             {/* Header */}
-            <header className="relative z-20 border-b-2 border-white/10 bg-[#050505]/80 backdrop-blur-2xl">
-                <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
-                    <Link href="/" className="flex items-center gap-3 group">
-                        <span className="font-black text-2xl tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E2E8F0] to-[#A855F7]">
+            <header className="relative z-20 border-b border-[#27272a] bg-[#050505]">
+                <div className="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+                    <Link href="/" className="flex items-center gap-3">
+                        <span className="font-bold text-lg tracking-tight text-white uppercase">
                             RONIN OTC
                         </span>
                     </Link>
-                    <ConnectButton aria-label="Connect Wallet" />
+                    <ConnectButton />
                 </div>
             </header>
 
-            <main className="relative z-10 max-w-5xl mx-auto px-6 py-12 space-y-8 animate-[fadeIn_0.8s_ease-out]">
+            <main className="relative z-10 max-w-4xl mx-auto px-6 py-16 space-y-12 animate-[fadeIn_0.5s_ease-out]">
 
                 {/* Transaction Status Banner */}
                 {isAnyTxPending && (
-                    <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-[#A855F7] text-white px-8 py-3 rounded-lg shadow-[0_0_40px_rgba(168,85,247,0.4)] flex items-center gap-4 animate-[slideUp_0.3s_ease-out]">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span className="font-black uppercase tracking-widest text-xs">{txStatus || 'Processing...'}</span>
+                    <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-white text-black px-6 py-2 rounded-full shadow-2xl flex items-center gap-3 animate-[slideUp_0.3s_ease-out]">
+                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        <span className="font-bold uppercase tracking-widest text-[10px]">{txStatus || 'Processing...'}</span>
                     </div>
                 )}
 
-                {/* Status Header Card - Squared & Shimmer Border */}
-                <div className="relative group max-w-3xl mx-auto animate-[slideUp_0.6s_ease-out]">
-                    <div className="absolute -inset-[3px] rounded-xl border-glow blur-[3px] opacity-60 group-hover:opacity-100 transition-opacity duration-700" />
-                    <div className="relative bg-[#050505]/40 backdrop-blur-3xl rounded-[10px] p-6 overflow-hidden border border-white/10">
-                        <div className="flex items-center justify-between flex-wrap gap-6">
-                            <div className="flex flex-col gap-2">
-                                <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-white uppercase leading-none text-hover-gradient">
-                                    DEAL SUMMARY
-                                </h1>
-                                <div className="flex items-center gap-3">
-                                    <p className="font-mono text-lg text-shimmer font-bold tracking-tight break-all">
-                                        {deal.deal_id}
-                                    </p>
-                                    <button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(deal.deal_id);
-                                            setTxStatus('ID copied!');
-                                            setTimeout(() => setTxStatus(null), 2000);
-                                        }}
-                                        className="p-1.5 bg-white/5 hover:bg-white/10 rounded-md transition-all text-secondary hover:text-white border border-white/10"
-                                        title="Copy ID"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div className={`flex items-center gap-3 px-6 py-3 rounded-lg border-2 shadow-2xl transition-all duration-500 ${statusConfig.bg}`}>
-                                <span className={`font-black text-xl uppercase tracking-tighter ${statusConfig.color}`}>
-                                    {deal.status}
-                                </span>
-                            </div>
+                {/* Status Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-8 border-b border-[#27272a]">
+                    <div className="space-y-2">
+                        <h1 className="text-4xl font-bold tracking-tight text-white uppercase">
+                            DEAL SUMMARY
+                        </h1>
+                        <div className="flex items-center gap-3">
+                            <p className="font-code text-zinc-400 text-sm tracking-wide">
+                                ID: {deal.deal_id}
+                            </p>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(deal.deal_id);
+                                    setTxStatus('ID copied!');
+                                    setTimeout(() => setTxStatus(null), 2000);
+                                }}
+                                className="p-1 text-zinc-500 hover:text-white transition-colors"
+                                title="Copy ID"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                </svg>
+                            </button>
                         </div>
+                    </div>
+                    <div className="px-3 py-1 bg-[#18181b] border border-[#27272a] rounded-full">
+                        <span className="font-code text-xs font-bold text-white uppercase tracking-widest">
+                            {deal.status}
+                        </span>
                     </div>
                 </div>
 
                 {/* Main Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
                     {/* Participants Card */}
-                    <div className="relative group animate-[slideUp_0.8s_ease-out]">
-                        <div className="absolute -inset-[3px] rounded-xl border-glow blur-md opacity-30 group-hover:opacity-60 transition-opacity duration-700" />
-                        <div className="relative bg-[#050505]/40 backdrop-blur-3xl rounded-[10px] p-5 border border-white/10 h-full">
-                            <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40 text-hover-gradient">
-                                PARTICIPANTS
-                            </h3>
-                            <div className="space-y-4">
-                                <div className="space-y-1">
-                                    <label className="text-[9px] text-purple-400 uppercase tracking-[0.3em] font-black opacity-70 ml-1">SELLER</label>
-                                    <div className="relative p-4 bg-white/[0.03] rounded-lg border border-white/5 flex items-center justify-between gap-4">
-                                        <p className="font-mono text-base text-shimmer font-bold break-all leading-none">{deal.seller_address}</p>
-                                        {isSeller && (
-                                            <span className="text-[8px] px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded border border-purple-500/30 font-black uppercase tracking-widest whitespace-nowrap">YOU</span>
-                                        )}
-                                    </div>
+                    <div className="bg-[#09090b] border-industrial rounded-xl p-8 space-y-8">
+                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em]">
+                            PARTICIPANTS
+                        </h3>
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold ml-1">SELLER</label>
+                                <div className="bg-black border border-white/5 rounded-lg p-4 font-code text-sm text-zinc-300 break-all relative group/addr">
+                                    {deal.seller_address}
+                                    {isSeller && (
+                                        <span className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-zinc-800 text-[10px] font-bold text-white rounded border border-zinc-700">YOU</span>
+                                    )}
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-[9px] text-blue-400 uppercase tracking-[0.3em] font-black opacity-70 ml-1">BUYER</label>
-                                    <div className="relative p-4 bg-white/[0.03] rounded-lg border border-white/5 flex items-center justify-between gap-4">
-                                        <p className="font-mono text-base text-shimmer font-bold break-all leading-none">{deal.buyer_address}</p>
-                                        {isBuyer && (
-                                            <span className="text-[8px] px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded border border-blue-500/30 font-black uppercase tracking-widest whitespace-nowrap">YOU</span>
-                                        )}
-                                    </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold ml-1">BUYER</label>
+                                <div className="bg-black border border-white/5 rounded-lg p-4 font-code text-sm text-zinc-300 break-all relative group/addr">
+                                    {deal.buyer_address}
+                                    {isBuyer && (
+                                        <span className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-zinc-800 text-[10px] font-bold text-white rounded border border-zinc-700">YOU</span>
+                                    )}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Deal Details Card */}
-                    <div className="relative group animate-[slideUp_1s_ease-out]">
-                        <div className="absolute -inset-[3px] rounded-xl border-glow blur-md opacity-30 group-hover:opacity-60 transition-opacity duration-700" />
-                        <div className="relative bg-[#050505]/40 backdrop-blur-3xl rounded-[10px] p-5 border border-white/10 h-full">
-                            <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40 text-hover-gradient">
+                    {/* Asset Info Card */}
+                    <div className="bg-[#09090b] border-industrial rounded-xl p-8 flex flex-col justify-between">
+                        <div className="space-y-8">
+                            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em]">
                                 ASSET INFO
                             </h3>
-                            <div className="space-y-4">
-                                <div className="p-4 bg-white/[0.03] rounded-lg border border-white/5">
-                                    <label className="text-[9px] text-secondary uppercase tracking-[0.3em] mb-2 block font-black opacity-70">TOTAL VALUE</label>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-4xl font-black tracking-tighter text-shimmer">
-                                            {deal.amount}
-                                        </span>
-                                        <span className="text-lg font-black text-white/40 uppercase tracking-widest">
-                                            {deal.token}
-                                        </span>
-                                    </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold ml-1">TOTAL VALUE</label>
+                                <div className="flex items-baseline gap-4">
+                                    <span className="text-6xl font-bold tracking-tighter text-white">
+                                        {deal.amount}
+                                    </span>
+                                    <span className="text-xl font-bold text-zinc-500 uppercase">
+                                        {deal.token}
+                                    </span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="p-3 bg-white/[0.02] rounded-lg border border-white/5">
-                                        <label className="text-[9px] text-secondary uppercase tracking-[0.3em] mb-1.5 block font-black opacity-70">REMAINING</label>
-                                        <p className={`text-base font-black tracking-tighter ${isDeadlinePassed ? 'text-red-500' : 'text-white'}`}>
-                                            <CountdownTimer deadline={deal.deadline} />
-                                        </p>
-                                    </div>
-                                    <div className="p-3 bg-white/[0.02] rounded-lg border border-white/5">
-                                        <label className="text-[9px] text-secondary uppercase tracking-[0.3em] mb-1.5 block font-black opacity-70">NETWORK</label>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-                                            <p className="text-base font-black tracking-tighter text-white uppercase leading-none">BASE</p>
-                                        </div>
-                                    </div>
-                                </div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-8 mt-12 pt-8 border-t border-zinc-800/50">
+                            <div className="space-y-1">
+                                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">REMAINING</label>
+                                <p className={`text-lg font-bold tracking-tight ${isDeadlinePassed ? 'text-red-500' : 'text-white'}`}>
+                                    <CountdownTimer deadline={deal.deadline} />
+                                </p>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">NETWORK</label>
+                                <p className="text-lg font-bold tracking-tight text-white uppercase">BASE</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Description - Full Width Glass */}
-                <div className="relative group max-w-4xl mx-auto animate-[fadeIn_1.2s_ease-out]">
-                    <div className="absolute -inset-[2px] rounded-xl border-glow blur-sm opacity-20 group-hover:opacity-40 transition-opacity duration-700" />
-                    <div className="relative bg-[#050505]/40 backdrop-blur-3xl rounded-[10px] p-6 border border-white/10">
-                        <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-3 opacity-40 text-hover-gradient">
-                            TERMS & NOTES
-                        </h3>
-                        <p className="text-base text-secondary leading-relaxed font-medium tracking-tight">
-                            {deal.description || "No specific terms provided."}
-                        </p>
-                    </div>
+                {/* Description */}
+                <div className="bg-[#09090b] border-industrial rounded-xl p-8">
+                    <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4">
+                        TERMS & NOTES
+                    </h3>
+                    <p className="text-zinc-400 leading-relaxed">
+                        {deal.description || "No specific terms provided."}
+                    </p>
                 </div>
 
-                {/* Actions - The Prime Section */}
-                <div className="relative group max-w-4xl mx-auto animate-[slideUp_1.4s_ease-out]">
-                    <div className="absolute -inset-[4px] rounded-2xl border-glow blur-lg opacity-40 group-hover:opacity-80 transition-opacity duration-700" />
-                    <div className="relative bg-[#050505]/40 backdrop-blur-3xl rounded-xl p-8 border border-white/20">
-                        <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40 text-hover-gradient">
-                            EXECUTION
-                        </h3>
+                {/* Execution Section */}
+                <div className="bg-[#09090b] border-industrial rounded-xl p-10 space-y-8">
+                    <h3 className="text-xl font-bold text-white uppercase tracking-tight">
+                        EXECUTION
+                    </h3>
 
-                        {/* 1. DRAFT: Buyer needs to deploy the contract */}
-                        {deal.status === 'draft' && (
-                            <div className="space-y-8">
-                                <p className="text-secondary text-lg font-medium leading-relaxed italic opacity-80 max-w-2xl">
-                                    "Initialize the secure escrow contract on-chain to proceed with the transaction."
-                                </p>
-                                {!address ? (
-                                    <div className="p-8 border-2 border-dashed border-white/10 rounded-lg bg-white/[0.02] flex flex-col items-center gap-6">
-                                        <p className="text-[10px] text-secondary font-black uppercase tracking-[0.3em]">AUTHORIZATION REQUIRED</p>
-                                        <ConnectButton />
-                                    </div>
-                                ) : isBuyer ? (
-                                    <button
-                                        onClick={handleCreateEscrow}
-                                        disabled={isAnyTxPending}
-                                        className="w-full bg-[#A855F7] hover:bg-[#9333ea] disabled:opacity-50 text-white font-black py-5 rounded-lg text-xl uppercase tracking-tighter shadow-[0_0_30px_rgba(168,85,247,0.3)] transition-all border-2 border-white/20"
-                                    >
-                                        {isAnyTxPending ? 'INITIALIZING...' : 'DEPLOY ESCROW CONTRACT'}
-                                    </button>
-                                ) : (
-                                    <div className="p-8 bg-white/[0.02] border border-white/10 rounded-lg text-center">
-                                        <p className="text-secondary font-black uppercase tracking-widest text-xs">Awaiting buyer to initialize contract...</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* 2. CREATED: Unfunded. Buyer needs to approve & deposit */}
-                        {deal.status === 'created' && (
-                            <div className="space-y-8">
-                                <div className="p-6 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-                                    <p className="text-blue-300 text-sm font-black uppercase tracking-tight">
-                                        Protocol ready. Please authorize and deposit <span className="text-white">{deal.amount} {deal.token}</span>.
-                                    </p>
+                    {/* 1. DRAFT: Buyer needs to deploy the contract */}
+                    {deal.status === 'draft' && (
+                        <div className="space-y-8">
+                            <p className="text-zinc-500 text-lg leading-relaxed italic">
+                                Initialize the secure escrow contract on-chain to proceed.
+                            </p>
+                            {!address ? (
+                                <div className="p-12 border border-dashed border-zinc-800 rounded-lg flex flex-col items-center gap-6">
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">CONNECTION REQUIRED</p>
+                                    <ConnectButton />
                                 </div>
-                                {isBuyer ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <button
-                                            onClick={handleApproveUsdc}
-                                            disabled={isAnyTxPending || !needsApproval}
-                                            className={`py-5 px-8 border-2 font-black text-lg uppercase tracking-widest rounded-lg transition-all ${!needsApproval ? 'border-green-500/50 text-green-500 bg-green-500/5' : 'border-white/20 text-white hover:bg-white/5'}`}
-                                        >
-                                            {!needsApproval ? '✅ ALLOWED' : '1. ALLOW USDC'}
-                                        </button>
-                                        <button
-                                            onClick={handleFundEscrow}
-                                            disabled={isAnyTxPending || needsApproval}
-                                            className="py-5 px-8 bg-white text-black hover:bg-gray-200 disabled:opacity-50 font-black text-lg uppercase tracking-widest rounded-lg transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)]"
-                                        >
-                                            {isFunding ? 'FUNDING...' : '2. DEPOSIT FUNDS'}
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="p-8 bg-white/[0.02] border border-white/10 rounded-lg text-center">
-                                        <p className="text-secondary font-black uppercase tracking-widest text-xs">Waiting for buyer to deposit funds...</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* 3. FUNDED: Buyer can release */}
-                        {deal.status === 'funded' && (
-                            <div className="space-y-8">
-                                <div className="p-6 bg-green-500/5 border border-green-500/20 rounded-lg text-center">
-                                    <p className="text-green-300 text-sm font-black uppercase tracking-widest">🛡️ ASSETS SECURED IN PROTOCOL</p>
+                            ) : isBuyer ? (
+                                <button
+                                    onClick={handleCreateEscrow}
+                                    disabled={isAnyTxPending}
+                                    className="w-full bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-bold py-5 rounded-lg text-lg uppercase tracking-tight transition-all"
+                                >
+                                    {isAnyTxPending ? 'INITIALIZING...' : 'DEPLOY ESCROW CONTRACT'}
+                                </button>
+                            ) : (
+                                <div className="p-8 bg-zinc-900/10 border border-zinc-800 rounded-lg text-center">
+                                    <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs">Awaiting buyer initialization...</p>
                                 </div>
-                                {isBuyer ? (
-                                    <div className="space-y-4">
-                                        <button
-                                            onClick={handleReleaseFunds}
-                                            disabled={isAnyTxPending}
-                                            className="w-full bg-[#A855F7] hover:bg-[#9333ea] disabled:opacity-50 text-white font-black py-6 rounded-lg text-2xl uppercase tracking-tighter shadow-[0_0_40px_rgba(168,85,247,0.4)] transition-all border-2 border-white/20"
-                                        >
-                                            {isReleasing ? 'RELEASING...' : 'RELEASE TO SELLER'}
-                                        </button>
-                                        <button
-                                            onClick={() => handleTx(refundEscrow, 'Opening dispute...')}
-                                            disabled={isAnyTxPending}
-                                            className="w-full py-4 text-orange-400 font-black uppercase tracking-widest text-xs hover:text-orange-300 transition-colors"
-                                        >
-                                            INITIATE DISPUTE
-                                        </button>
-                                    </div>
-                                ) : isSeller ? (
-                                    <div className="p-8 bg-white/[0.02] border border-white/10 rounded-lg text-center">
-                                        <p className="text-secondary font-black uppercase tracking-widest text-xs">Waiting for buyer to release funds...</p>
-                                    </div>
-                                ) : null}
+                            )}
+                        </div>
+                    )}
 
-                                {isDeadlinePassed && (
-                                    <button
-                                        onClick={handleRefund}
-                                        disabled={isAnyTxPending}
-                                        className="w-full py-3 bg-red-900/10 border border-red-500/30 text-red-400 font-black uppercase tracking-widest text-[10px] rounded hover:bg-red-900/20 transition-all"
-                                    >
-                                        REFUND (DEADLINE EXPIRED)
-                                    </button>
-                                )}
-                            </div>
-                        )}
-
-                        {/* 4. FINAL STATES */}
-                        {(deal.status === 'released' || deal.status === 'refunded' || deal.status === 'disputed') && (
-                            <div className="text-center py-12 space-y-4">
-                                <div className="text-6xl mb-4">
-                                    {deal.status === 'released' ? '💎' : deal.status === 'refunded' ? '↩️' : '⚖️'}
-                                </div>
-                                <h4 className="text-3xl font-black text-white uppercase tracking-tighter">
-                                    {deal.status === 'released' ? 'DEAL COMPLETED' : deal.status === 'refunded' ? 'DEAL REFUNDED' : 'DEAL IN DISPUTE'}
-                                </h4>
-                                <p className="text-secondary font-medium max-w-md mx-auto">
-                                    {deal.status === 'released' ? 'Assets have been successfully transferred to the seller.' :
-                                        deal.status === 'refunded' ? 'Funds have been returned to the buyer.' :
-                                            'The arbiter is currently reviewing this transaction.'}
+                    {/* 2. CREATED: Unfunded. Buyer needs to approve & deposit */}
+                    {deal.status === 'created' && (
+                        <div className="space-y-8">
+                            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg">
+                                <p className="text-zinc-400 text-sm font-medium">
+                                    Protocol ready. Deposit <span className="text-white font-bold">{deal.amount} {deal.token}</span> to secure the deal.
                                 </p>
                             </div>
-                        )}
-                    </div>
+                            {isBuyer ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <button
+                                        onClick={handleApproveUsdc}
+                                        disabled={isAnyTxPending || !needsApproval}
+                                        className={`py-5 px-8 border font-bold text-base uppercase tracking-widest rounded-lg transition-all ${!needsApproval ? 'border-zinc-800 text-zinc-500 bg-zinc-900' : 'border-white text-white hover:bg-white/10'}`}
+                                    >
+                                        {!needsApproval ? 'ALLOWANCE OK' : '1. ALLOW USDC'}
+                                    </button>
+                                    <button
+                                        onClick={handleFundEscrow}
+                                        disabled={isAnyTxPending || needsApproval}
+                                        className="py-5 px-8 bg-white text-black hover:bg-zinc-200 disabled:opacity-50 font-bold text-base uppercase tracking-widest rounded-lg transition-all"
+                                    >
+                                        {isFunding ? 'FUNDING...' : '2. DEPOSIT FUNDS'}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="p-8 bg-zinc-900/10 border border-zinc-800 rounded-lg text-center">
+                                    <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs">Waiting for buyer deposit...</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* 3. FUNDED: Buyer can release */}
+                    {deal.status === 'funded' && (
+                        <div className="space-y-8">
+                            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg text-center">
+                                <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">ASSETS SECURED IN PROTOCOL</p>
+                            </div>
+                            {isBuyer ? (
+                                <div className="space-y-4">
+                                    <button
+                                        onClick={handleReleaseFunds}
+                                        disabled={isAnyTxPending}
+                                        className="w-full bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-bold py-6 rounded-lg text-xl uppercase tracking-tight transition-all"
+                                    >
+                                        {isReleasing ? 'RELEASING...' : 'RELEASE TO SELLER'}
+                                    </button>
+                                    <button
+                                        onClick={handleDispute}
+                                        disabled={isAnyTxPending}
+                                        className="w-full py-4 text-zinc-500 font-bold uppercase tracking-widest text-[10px] hover:text-white transition-colors"
+                                    >
+                                        OPEN DISPUTE
+                                    </button>
+                                </div>
+                            ) : isSeller ? (
+                                <div className="p-8 bg-zinc-900/10 border border-zinc-800 rounded-lg text-center">
+                                    <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs">Waiting for buyer release...</p>
+                                </div>
+                            ) : null}
+
+                            {isDeadlinePassed && (
+                                <button
+                                    onClick={handleRefund}
+                                    disabled={isAnyTxPending}
+                                    className="w-full py-3 bg-red-950/20 border border-red-900 text-red-500 font-bold uppercase tracking-widest text-[10px] rounded hover:bg-red-950/40 transition-all"
+                                >
+                                    REFUND (DEADLINE EXPIRED)
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* 4. FINAL STATES */}
+                    {(deal.status === 'released' || deal.status === 'refunded' || deal.status === 'disputed') && (
+                        <div className="text-center py-16 space-y-6">
+                            <h4 className="text-3xl font-bold text-white uppercase tracking-tight">
+                                {deal.status === 'released' ? 'DEAL COMPLETED' : deal.status === 'refunded' ? 'DEAL REFUNDED' : 'DEAL IN DISPUTE'}
+                            </h4>
+                            <p className="text-zinc-500 max-w-sm mx-auto text-sm">
+                                {deal.status === 'released' ? 'Assets have been successfully transferred to the target address.' :
+                                    deal.status === 'refunded' ? 'Funds have been returned to the originator.' :
+                                        'Protocol arbiter is currently reviewing the transaction.'}
+                            </p>
+                        </div>
+                    )}
                 </div>
 
-                {/* Footer Section - Protocol Fee Switcher & Smart Contract */}
-                <div className="max-w-4xl mx-auto space-y-6 animate-[fadeIn_1.6s_ease-out]">
-                    <div className="relative group">
-                        <div className="absolute -inset-[2px] rounded-2xl border-glow blur-md opacity-20 group-hover:opacity-40 transition-opacity duration-700" />
-                        <div className="relative bg-[#050505]/60 backdrop-blur-3xl border-2 border-white/5 rounded-2xl p-6">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                                <div className="space-y-1">
-                                    <h4 className="text-xs font-black uppercase tracking-[0.3em] text-purple-400 opacity-70">PROTOCOL FEE STRUCTURE</h4>
-                                    <p className="text-secondary text-sm font-medium">Lower your fees by using our native ecosystem tokens.</p>
+                {/* Footer Fee Section */}
+                <div className="max-w-4xl mx-auto space-y-6 pt-12">
+                    <div className="bg-[#09090b] border border-zinc-800 rounded-xl p-8">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                            <div className="space-y-1">
+                                <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">PROTOCOL FEES</h4>
+                                <p className="text-zinc-500 text-sm">Transparent fee structure for secure OTC trading.</p>
+                            </div>
+                            <div className="flex items-center gap-2 p-1 bg-black border border-zinc-800 rounded-lg">
+                                <div className="px-4 py-2 bg-zinc-800 rounded-md">
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">0.5% Standard</span>
                                 </div>
-                                <div className="flex items-center gap-4 bg-white/5 p-2 rounded-xl border border-white/10">
-                                    <div className="px-4 py-2 bg-white/10 rounded-lg border border-white/20 shadow-xl">
-                                        <span className="text-xs font-black text-white uppercase tracking-widest">STANDARD: 0.5%</span>
-                                    </div>
-                                    <div className="px-4 py-2 rounded-lg opacity-40 hover:opacity-100 transition-opacity cursor-help" title="Coming Soon">
-                                        <span className="text-xs font-black text-secondary uppercase tracking-widest">$TOWNS: 0.1% <span className="text-[8px] ml-1 bg-purple-500/20 text-purple-300 px-1 rounded">SOON</span></span>
-                                    </div>
+                                <div className="px-4 py-2 opacity-50">
+                                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">0.1% for $TOWNS Holders</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {deal.escrow_address && (
-                        <a
-                            href={`https://basescan.org/address/${deal.escrow_address}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block bg-[#050505]/40 backdrop-blur-3xl border-2 border-white/5 rounded-2xl p-6 group hover:border-[#A855F7]/30 transition-all text-center md:text-left"
-                        >
+                        <div className="bg-[#09090b] border border-zinc-800 rounded-xl p-6">
                             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                                <span className="text-xs font-black uppercase tracking-widest text-secondary group-hover:text-white transition-colors">Verified On-Chain Contract</span>
-                                <span className="font-mono text-xs text-white bg-white/5 py-2 px-4 rounded-lg group-hover:bg-[#A855F7]/10 transition-all border border-white/5 group-hover:border-[#A855F7]/20">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">CONTRACT ADDRESS</span>
+                                <a
+                                    href={`https://basescan.org/address/${deal.escrow_address}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-code text-xs text-zinc-400 px-4 py-2 bg-black border border-white/5 rounded-lg hover:border-white/20 transition-all break-all text-center"
+                                >
                                     {deal.escrow_address}
-                                    <span className="ml-2 opacity-50">↗</span>
-                                </span>
+                                </a>
                             </div>
-                        </a>
+                        </div>
                     )}
                 </div>
 
             </main>
-
-            {/* Simulated Grid Cell Highlights */}
-            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden opacity-20">
-                {[...Array(15)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="absolute bg-white/5 animate-pulse"
-                        style={{
-                            width: '40px',
-                            height: '40px',
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            animationDuration: `${3 + Math.random() * 4}s`,
-                            animationDelay: `${Math.random() * 2}s`
-                        }}
-                    />
-                ))}
-            </div>
         </div>
     )
 }
