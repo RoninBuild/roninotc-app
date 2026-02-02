@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useRouter } from 'next/navigation'
 
 export default function Home() {
@@ -15,92 +14,73 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-semibold">RoninOTC</h1>
-          <ConnectButton />
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-20">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <div className="inline-block px-3 py-1 mb-6 text-sm border border-gray-800 rounded-full">
-            Trustless Escrow Protocol
-          </div>
-          
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-            Secure OTC Trading<br />on Base
-          </h2>
-          
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Peer-to-peer crypto deals with smart contract escrow. No middleman, no trust required.
-          </p>
+      {/* Background Ambience - Blue glow from top */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-blue-600/20 blur-[120px] rounded-full pointer-events-none opacity-50" />
+
+      {/* Hero Section */}
+      <div className="relative z-10 max-w-4xl w-full text-center space-y-8">
+
+        {/* Small Pill Label */}
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+          <span className="text-xs font-medium text-blue-200">RoninOTC Protocol</span>
         </div>
 
-        {/* Input Box */}
-        <div className="max-w-2xl mx-auto mb-20">
-          <div className="border border-gray-800 rounded-lg p-6 bg-black">
-            <label className="block text-sm text-gray-400 mb-3">
-              Enter Deal ID or Escrow Address
-            </label>
+        {/* Main Title */}
+        <h1 className="text-6xl md:text-8xl font-bold tracking-tight text-white leading-[1.1]">
+          Secure OTC <br />
+          <span className="relative inline-block text-white">
+            Trading
+            {/* Scribble Underline SVG */}
+            <svg className="absolute -bottom-2 w-full h-3 text-blue-600" viewBox="0 0 100 10" preserveAspectRatio="none">
+              <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="3" fill="none" />
+            </svg>
+          </span>
+        </h1>
+
+        <p className="text-lg md:text-xl text-secondary max-w-2xl mx-auto font-light">
+          Trustless peer-to-peer deals on Base. <br className="hidden md:block" />
+          No middleman. No headaches. Just safe swaps.
+        </p>
+
+        {/* Search Input Box (Replacing the old button) */}
+        <div className="max-w-md mx-auto mt-12 relative group">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl opacity-30 group-hover:opacity-60 blur transition duration-500" />
+          <div className="relative flex items-center bg-[#0A0A0A] rounded-xl p-2 shadow-2xl border border-white/10">
+            <div className="pl-4 text-secondary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+            </div>
             <input
               type="text"
               value={dealId}
               onChange={(e) => setDealId(e.target.value)}
-              placeholder="DEAL-1234567890-abc123"
-              className="w-full px-4 py-3 mb-4 bg-black border border-gray-800 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-gray-600"
+              placeholder="Search Deal ID..."
+              className="flex-1 bg-transparent border-none text-white px-4 py-3 focus:outline-none placeholder:text-gray-600 text-lg"
               onKeyPress={(e) => e.key === 'Enter' && handleOpenDeal()}
             />
             <button
               onClick={handleOpenDeal}
               disabled={!dealId.trim()}
-              className="w-full py-3 px-4 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+              className="bg-white text-black hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold py-3 px-6 rounded-lg transition-all"
             >
-              Open Deal
+              Search
             </button>
           </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="border border-gray-800 rounded-lg p-8 text-center">
-            <div className="text-3xl mb-3">🔒</div>
-            <h3 className="font-semibold mb-2">Secure</h3>
-            <p className="text-sm text-gray-400">Smart contract escrow on Base network</p>
+        {/* Footer/Features minimal */}
+        <div className="pt-20 flex justify-center gap-12 text-sm text-secondary font-medium uppercase tracking-wider opacity-60">
+          <div className="flex items-center gap-2">
+            <span>🔒</span> Smart Contracts
           </div>
-          
-          <div className="border border-gray-800 rounded-lg p-8 text-center">
-            <div className="text-3xl mb-3">⚡</div>
-            <h3 className="font-semibold mb-2">Fast</h3>
-            <p className="text-sm text-gray-400">Instant settlement with USDC</p>
-          </div>
-          
-          <div className="border border-gray-800 rounded-lg p-8 text-center">
-            <div className="text-3xl mb-3">🤝</div>
-            <h3 className="font-semibold mb-2">Trustless</h3>
-            <p className="text-sm text-gray-400">No intermediaries needed</p>
+          <div className="flex items-center gap-2">
+            <span>⚡</span> Instant Setlement
           </div>
         </div>
 
-        {/* Status Pills */}
-        <div className="flex flex-wrap gap-3 justify-center">
-          <div className="px-4 py-2 bg-white text-black text-sm font-medium rounded-full">
-            OTC Escrow Live
-          </div>
-          <div className="px-4 py-2 border border-gray-800 text-sm text-gray-400 rounded-full">
-            Premarket Coming Soon
-          </div>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-800 py-8 text-center text-sm text-gray-500">
-        <p>Built on <span className="text-gray-400">Base</span> • Powered by <span className="text-gray-400">Towns</span></p>
-      </footer>
+      </div>
     </div>
   )
 }
