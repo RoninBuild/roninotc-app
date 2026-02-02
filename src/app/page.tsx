@@ -50,24 +50,15 @@ export default function Home() {
       {/* Hero Section - Moved Higher */}
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-start justify-center min-h-[75vh] px-8 md:px-12 -mt-20">
 
-        {/* Badge - Separate Pills */}
-        <div className="mb-12 opacity-0 animate-[fadeIn_0.8s_ease-out_forwards]">
-          <div className="inline-flex items-center gap-3">
-            <div className="px-4 py-1.5 rounded-full bg-white/10 border border-white/10 backdrop-blur-md">
-              <span className="font-bold text-sm tracking-widest text-[#A855F7] uppercase shadow-purple-500/20 drop-shadow-lg">
-                RONIN
-              </span>
-            </div>
-            <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/5 backdrop-blur-md">
-              <span className="font-bold text-sm tracking-widest text-white uppercase opacity-80">
-                OTC
-              </span>
-            </div>
-          </div>
+        {/* Simple Text Header (Replaces Badge) */}
+        <div className="mb-4 opacity-0 animate-[fadeIn_0.8s_ease-out_forwards]">
+          <span className="font-sans font-black text-3xl md:text-4xl text-white tracking-tighter uppercase drop-shadow-2xl">
+            RoninOTC
+          </span>
         </div>
 
-        {/* Main Title */}
-        <h1 className="font-sans text-8xl md:text-[10rem] font-black tracking-tighter text-white leading-[0.85] mb-12 opacity-0 animate-[slideUp_0.8s_ease-out_0.2s_forwards]">
+        {/* Main Title - Scaled Down (~20%) */}
+        <h1 className="font-sans text-6xl md:text-[7rem] font-black tracking-tighter text-white leading-[0.85] mb-10 opacity-0 animate-[slideUp_0.8s_ease-out_0.2s_forwards]">
           Secure. <br />
           Trustless. <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E2E8F0] to-[#A855F7]">
@@ -75,16 +66,16 @@ export default function Home() {
           </span>
         </h1>
 
-        <p className="text-2xl md:text-3xl text-secondary max-w-2xl font-semibold mb-16 leading-relaxed opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards] tracking-tight">
-          The first specialized OTC protocol on Base. <br />
+        <p className="text-xl md:text-2xl text-secondary max-w-2xl font-medium mb-12 leading-relaxed opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards] tracking-tight">
+          The first specialized <span className="text-white font-bold">OTC</span> protocol on <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 font-bold">Base</span>. <br />
           Built for the <span className="text-white">Towns</span> ecosystem.
         </p>
 
-        {/* Input Box */}
+        {/* Input Box - Thicker Border */}
         <div className="w-full max-w-xl relative group opacity-0 animate-[fadeIn_1s_ease-out_0.6s_forwards]">
           <div className="absolute -inset-1 bg-gradient-to-r from-[#A855F7] to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-500" />
 
-          <div className="relative flex items-center bg-[#050505] border border-white/10 rounded-2xl p-2.5 shadow-2xl">
+          <div className="relative flex items-center bg-[#050505] border-2 border-white/20 rounded-2xl p-2.5 shadow-2xl">
             <div className="pl-6 pr-4 text-[#A855F7] font-mono text-xl select-none pointer-events-none font-black">
               {`>`}
             </div>
@@ -107,6 +98,25 @@ export default function Home() {
           </div>
         </div>
 
+      </div>
+
+      {/* CSS-based Random Cell Highlight Effect (Simulated Grid) */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute bg-white/5 animate-pulse"
+            style={{
+              width: '50px',
+              height: '50px',
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDuration: `${2 + Math.random() * 5}s`,
+              animationDelay: `${Math.random() * 5}s`,
+              opacity: Math.random() * 0.3
+            }}
+          />
+        ))}
       </div>
     </div>
   )
