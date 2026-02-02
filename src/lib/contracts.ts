@@ -8,7 +8,6 @@ export const factoryAbi = [
         type: 'function',
         name: 'createEscrow',
         inputs: [
-            { name: 'buyer', type: 'address' },
             { name: 'seller', type: 'address' },
             { name: 'token', type: 'address' },
             { name: 'amount', type: 'uint256' },

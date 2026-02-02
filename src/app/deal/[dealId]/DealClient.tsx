@@ -147,8 +147,7 @@ export default function DealClient({ dealId }: Props) {
                 abi: factoryAbi,
                 functionName: 'createEscrow',
                 args: [
-                    deal.buyer_address as `0x${string}`,    // buyer
-                    deal.seller_address as `0x${string}`,   // seller
+                    deal.seller_address as `0x${string}`,   // seller (arg 0)
                     USDC_ADDRESS,                           // token (USDC)
                     amount,                                 // amount in USDC (6 decimals)
                     BigInt(deal.deadline),                 // deadline timestamp
@@ -412,12 +411,12 @@ export default function DealClient({ dealId }: Props) {
                             <span className="text-green-400">⚡</span> Actions
                         </h3>
 
-                        {/* DRAFT: Seller creates escrow on-chain */}
+                        {/* DRAFT: Buyer creates escrow on-chain */}
                         {deal.status === 'draft' && (
                             <div className="space-y-4">
                                 <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
                                     <p className="text-yellow-300 text-sm font-medium">
-                                        ⏳ This deal has not been created on-chain yet. The seller must create the escrow contract first.
+                                        ⏳ This deal has not been created on-chain yet. The BUYER must create the escrow contract and secure funds.
                                     </p>
                                 </div>
 
@@ -428,7 +427,7 @@ export default function DealClient({ dealId }: Props) {
                                     </div>
                                 )}
 
-                                {address && isSeller && (
+                                {address && isBuyer && (
                                     <button
                                         onClick={handleCreateEscrow}
                                         disabled={isAnyTxPending}
@@ -440,15 +439,15 @@ export default function DealClient({ dealId }: Props) {
                                                 {isCreateConfirming ? 'Confirming...' : 'Creating...'}
                                             </>
                                         ) : (
-                                            <>🚀 Create Escrow On-Chain</>
+                                            <>🚀 Create Escrow (Buyer)</>
                                         )}
                                     </button>
                                 )}
 
-                                {address && isBuyer && !isSeller && (
+                                {address && isSeller && !isBuyer && (
                                     <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-center">
                                         <p className="text-blue-300 text-sm">
-                                            ⏳ Waiting for the seller to create the escrow contract...
+                                            ⏳ Waiting for the Buyer to create the escrow contract...
                                         </p>
                                     </div>
                                 )}
