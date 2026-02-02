@@ -19,6 +19,20 @@ export const factoryAbi = [
         stateMutability: 'nonpayable',
     },
     {
+        type: 'function',
+        name: 'getBuyerEscrows',
+        inputs: [{ name: '_buyer', type: 'address' }],
+        outputs: [{ name: '', type: 'address[]' }],
+        stateMutability: 'view',
+    },
+    {
+        type: 'function',
+        name: 'getSellerEscrows',
+        inputs: [{ name: '_seller', type: 'address' }],
+        outputs: [{ name: '', type: 'address[]' }],
+        stateMutability: 'view',
+    },
+    {
         type: 'event',
         name: 'EscrowCreated',
         inputs: [

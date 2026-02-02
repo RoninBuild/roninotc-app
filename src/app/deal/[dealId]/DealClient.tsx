@@ -15,13 +15,12 @@ type Props = {
 }
 
 export default function DealClient({ dealId }: Props) {
-    // const params = useParams()
-    // const dealId = params.dealId as string
     const { address } = useAccount()
     const [deal, setDeal] = useState<Deal | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [txStatus, setTxStatus] = useState<string | null>(null)
+    const [isCheckingBlockchain, setIsCheckingBlockchain] = useState(false)
 
     // Contract write hooks
     const { writeContract: createEscrow, data: createHash, isPending: isCreating } = useWriteContract()
@@ -43,6 +42,14 @@ export default function DealClient({ dealId }: Props) {
         abi: erc20Abi,
         functionName: 'allowance',
         args: address && deal?.escrow_address ? [address, deal.escrow_address as `0x${string}`] : undefined,
+    })
+
+    // Read buyer's escrows from blockchain to check if contract was created
+    const { data: buyerEscrows, refetch: refetchBuyerEscrows } = useReadContract({
+        address: FACTORY_ADDRESS,
+        abi: factoryAbi,
+        functionName: 'getBuyerEscrows',
+        args: deal?.buyer_address ? [deal.buyer_address as `0x${string}`] : undefined,
     })
 
     // Load deal with loading indicator (for initial load)
@@ -76,6 +83,49 @@ export default function DealClient({ dealId }: Props) {
         }
     }
 
+    // Check blockchain for escrow and update status if found
+    const checkBlockchainForEscrow = async () => {
+        if (!deal || deal.status !== 'draft' || !deal.buyer_address) return
+
+        setIsCheckingBlockchain(true)
+        setTxStatus('Checking blockchain for escrow contract...')
+
+        try {
+            // Refetch buyer escrows from blockchain
+            const result = await refetchBuyerEscrows()
+            const escrows = result.data as `0x${string}`[] | undefined
+
+            console.log('Buyer escrows from blockchain:', escrows)
+
+            if (escrows && escrows.length > 0) {
+                // Get the latest escrow (last in array)
+                const latestEscrow = escrows[escrows.length - 1]
+                console.log('Latest escrow found:', latestEscrow)
+
+                // Try to update API
+                try {
+                    await updateDealStatus(deal.deal_id, 'created', latestEscrow)
+                    setTxStatus('Escrow found! Updating status...')
+                } catch (apiErr) {
+                    console.error('API update failed, but escrow exists:', apiErr)
+                    // Even if API fails, update local state
+                    setDeal(prev => prev ? { ...prev, status: 'created', escrow_address: latestEscrow } : prev)
+                    setTxStatus('Escrow contract found on blockchain!')
+                }
+
+                // Refresh deal data
+                await silentRefresh()
+            } else {
+                setTxStatus('No escrow found yet. Will check again...')
+            }
+        } catch (err) {
+            console.error('Blockchain check failed:', err)
+            setTxStatus('Checking...')
+        } finally {
+            setIsCheckingBlockchain(false)
+        }
+    }
+
     useEffect(() => {
         loadDeal(true) // Initial load with spinner
 
@@ -87,54 +137,41 @@ export default function DealClient({ dealId }: Props) {
         return () => clearInterval(interval)
     }, [dealId])
 
-    // Handle Deal Creation Success
+    // Handle Deal Creation Success - use blockchain verification
     useEffect(() => {
         if (isCreateSuccess && createReceipt && deal) {
             console.log('=== CREATE SUCCESS ===')
             console.log('Receipt:', createReceipt)
-            console.log('Logs count:', createReceipt.logs.length)
 
             const handleSuccess = async () => {
-                try {
-                    // Find the EscrowCreated event from Factory
-                    for (const log of createReceipt.logs) {
-                        console.log('Log address:', log.address)
-                        console.log('Log topics:', log.topics)
+                setTxStatus('Transaction confirmed! Verifying on blockchain...')
 
-                        if (log.address.toLowerCase() === FACTORY_ADDRESS.toLowerCase()) {
-                            // EscrowCreated event has escrowAddress as first indexed param (topics[1])
-                            const escrowAddressTopic = log.topics[1]
-                            if (escrowAddressTopic) {
-                                // Topics are 32 bytes (64 hex chars + 0x), address is last 20 bytes (40 hex chars)
-                                const escrowAddress = `0x${escrowAddressTopic.slice(-40)}` as `0x${string}`
+                // First try to extract from receipt logs
+                for (const log of createReceipt.logs) {
+                    if (log.address.toLowerCase() === FACTORY_ADDRESS.toLowerCase()) {
+                        const escrowAddressTopic = log.topics[1]
+                        if (escrowAddressTopic) {
+                            const escrowAddress = `0x${escrowAddressTopic.slice(-40)}` as `0x${string}`
+                            console.log('Extracted escrow address:', escrowAddress)
 
-                                console.log('Extracted escrow address:', escrowAddress)
+                            // Update local state immediately
+                            setDeal(prev => prev ? { ...prev, status: 'created', escrow_address: escrowAddress } : prev)
+                            setTxStatus('Escrow created successfully!')
 
-                                try {
-                                    await updateDealStatus(deal.deal_id, 'created', escrowAddress)
-                                    console.log('✅ Deal status updated to Created!')
-                                    setTxStatus('Escrow created! Reloading...')
-
-                                    // Force reload deal data (silent)
-                                    await silentRefresh()
-                                } catch (apiError) {
-                                    console.error('API update failed:', apiError)
-                                    setTxStatus('Contract created but status update failed. Refreshing...')
-                                    await silentRefresh()
-                                }
-                                return
+                            // Try API update in background
+                            try {
+                                await updateDealStatus(deal.deal_id, 'created', escrowAddress)
+                            } catch (apiErr) {
+                                console.warn('API update failed, but escrow exists on blockchain:', apiErr)
                             }
+                            return
                         }
                     }
-
-                    console.warn('No EscrowCreated event found in logs')
-                    setTxStatus('Contract may be created. Refreshing...')
-                    await silentRefresh()
-
-                } catch (e) {
-                    console.error('Failed to process creation success:', e)
-                    setTxStatus('Error processing. Please refresh.')
                 }
+
+                // Fallback: check blockchain directly
+                console.log('Could not parse logs, checking blockchain...')
+                await checkBlockchainForEscrow()
             }
             handleSuccess()
         }
@@ -455,7 +492,7 @@ export default function DealClient({ dealId }: Props) {
                                     <div className="space-y-3">
                                         <button
                                             onClick={handleCreateEscrow}
-                                            disabled={isAnyTxPending}
+                                            disabled={isAnyTxPending || isCheckingBlockchain}
                                             className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center justify-center gap-3"
                                         >
                                             {isCreating ? (
@@ -468,21 +505,27 @@ export default function DealClient({ dealId }: Props) {
                                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                                     Confirming on blockchain...
                                                 </>
+                                            ) : isCheckingBlockchain ? (
+                                                <>
+                                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                    Verifying contract...
+                                                </>
                                             ) : (
                                                 <>🚀 Create Escrow (Buyer)</>
                                             )}
                                         </button>
 
                                         {/* Transaction Status Display */}
-                                        {(isCreating || isCreateConfirming || txStatus) && (
-                                            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                                                <p className="text-blue-300 text-sm text-center flex items-center justify-center gap-2">
-                                                    {(isCreating || isCreateConfirming) && (
-                                                        <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
+                                        {(isCreating || isCreateConfirming || isCheckingBlockchain || txStatus) && (
+                                            <div className={`p-3 rounded-lg border ${txStatus?.includes('successfully') || txStatus?.includes('found') ? 'bg-green-500/10 border-green-500/20' : 'bg-blue-500/10 border-blue-500/20'}`}>
+                                                <p className={`text-sm text-center flex items-center justify-center gap-2 ${txStatus?.includes('successfully') || txStatus?.includes('found') ? 'text-green-300' : 'text-blue-300'}`}>
+                                                    {(isCreating || isCreateConfirming || isCheckingBlockchain) && (
+                                                        <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                                                     )}
                                                     {isCreating ? 'Please confirm in your wallet...' :
                                                         isCreateConfirming ? 'Waiting for blockchain confirmation...' :
-                                                            txStatus}
+                                                            isCheckingBlockchain ? 'Verifying escrow contract on blockchain...' :
+                                                                txStatus}
                                                 </p>
                                             </div>
                                         )}
