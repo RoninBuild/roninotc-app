@@ -1,9 +1,10 @@
 ﻿import type { Metadata } from 'next'
-import { Space_Mono } from 'next/font/google'
+import { Inter, Space_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/Providers'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const spaceMono = Space_Mono({
   weight: ['400', '700'],
   subsets: ['latin'],
@@ -22,7 +23,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`antialiased bg-background text-white`}>
+      <body className={`antialiased bg-background text-white ${inter.variable} ${spaceMono.variable}`}>
         <Providers>
           <div className="flex flex-col min-h-screen">
             <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-white/5">
