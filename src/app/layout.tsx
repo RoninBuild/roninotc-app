@@ -16,7 +16,15 @@ export const metadata: Metadata = {
   title: 'RoninOTC - Trustless Escrow on Base',
   description: 'OTC escrow deals on Base with USDC',
   other: {
-    'fc:frame': JSON.stringify({
+    'fc:frame': 'vNext',
+    'fc:frame:image': 'https://roninotc-app.vercel.app/logo.png',
+    'fc:frame:image:aspect_ratio': '1:1',
+    'fc:frame:button:1': 'Launch RoninOTC',
+    'fc:frame:button:1:action': 'launch_frame',
+    'fc:frame:button:1:target': 'https://roninotc-app.vercel.app',
+    'fc:frame:post_url': 'https://roninotc-app.vercel.app/api/frame',
+
+    'fc:frame:v2': JSON.stringify({
       version: 'next',
       imageUrl: 'https://roninotc-app.vercel.app/logo.png',
       button: {
@@ -25,11 +33,16 @@ export const metadata: Metadata = {
           type: 'launch_app',
           name: 'RoninOTC',
           url: 'https://roninotc-app.vercel.app',
+          splashImageUrl: 'https://roninotc-app.vercel.app/logo.png',
+          splashBackgroundColor: '#000000',
         },
       },
     }),
+
     'towns:miniapp': JSON.stringify({
-      version: '1',
+      name: 'RoninOTC',
+      description: 'Trustless Escrow OTC on Base',
+      version: '1.0',
       imageUrl: 'https://roninotc-app.vercel.app/logo.png',
       button: {
         title: 'Launch RoninOTC',
@@ -40,6 +53,7 @@ export const metadata: Metadata = {
         },
       },
     }),
+
     'fc:miniapp': JSON.stringify({
       version: '1',
       imageUrl: 'https://roninotc-app.vercel.app/logo.png',
@@ -52,14 +66,11 @@ export const metadata: Metadata = {
         },
       },
     }),
-    'fc:frame:image': 'https://roninotc-app.vercel.app/logo.png',
-    'fc:frame:image:aspect_ratio': '1.1',
-    'fc:frame:button:1': 'Launch RoninOTC',
-    'fc:frame:button:1:action': 'launch_frame',
-    'fc:frame:button:1:target': 'https://roninotc-app.vercel.app',
+
     'og:title': 'RoninOTC - Trustless Escrow on Base',
     'og:description': 'Secure OTC deals in Towns channels. Built for the Towns ecosystem.',
     'og:image': 'https://roninotc-app.vercel.app/logo.png',
+    'og:url': 'https://roninotc-app.vercel.app',
     'twitter:card': 'summary_large_image',
     'twitter:title': 'RoninOTC - Trustless Escrow on Base',
     'twitter:description': 'Secure OTC deals in Towns channels. Built for the Towns ecosystem.',
