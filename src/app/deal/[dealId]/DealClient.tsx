@@ -45,29 +45,43 @@ export default function DealClient({ dealId }: Props) {
         args: address && deal?.escrow_address ? [address, deal.escrow_address as `0x${string}`] : undefined,
     })
 
-    const loadDeal = async () => {
+    // Load deal with loading indicator (for initial load)
+    const loadDeal = async (showLoading = true) => {
         try {
-            setLoading(true)
+            if (showLoading) setLoading(true)
             const data = await getDeal(dealId)
             if (!data) {
                 setError('Deal not found')
             } else {
                 setDeal(data)
+                setError(null)
             }
         } catch (err) {
-            setError('Failed to load deal')
+            if (showLoading) setError('Failed to load deal')
             console.error(err)
         } finally {
-            setLoading(false)
+            if (showLoading) setLoading(false)
+        }
+    }
+
+    // Silent refresh for background updates (no loading flicker)
+    const silentRefresh = async () => {
+        try {
+            const data = await getDeal(dealId)
+            if (data) {
+                setDeal(data)
+            }
+        } catch (err) {
+            console.error('Silent refresh failed:', err)
         }
     }
 
     useEffect(() => {
-        loadDeal()
+        loadDeal(true) // Initial load with spinner
 
-        // Auto-refresh every 5 seconds to check for blockchain updates (deployment, funding, etc)
+        // Silent refresh every 5 seconds (no loading flicker)
         const interval = setInterval(() => {
-            loadDeal()
+            silentRefresh()
         }, 5000)
 
         return () => clearInterval(interval)
@@ -101,12 +115,12 @@ export default function DealClient({ dealId }: Props) {
                                     console.log('✅ Deal status updated to Created!')
                                     setTxStatus('Escrow created! Reloading...')
 
-                                    // Force reload deal data
-                                    await loadDeal()
+                                    // Force reload deal data (silent)
+                                    await silentRefresh()
                                 } catch (apiError) {
                                     console.error('API update failed:', apiError)
                                     setTxStatus('Contract created but status update failed. Refreshing...')
-                                    await loadDeal()
+                                    await silentRefresh()
                                 }
                                 return
                             }
@@ -115,7 +129,7 @@ export default function DealClient({ dealId }: Props) {
 
                     console.warn('No EscrowCreated event found in logs')
                     setTxStatus('Contract may be created. Refreshing...')
-                    await loadDeal()
+                    await silentRefresh()
 
                 } catch (e) {
                     console.error('Failed to process creation success:', e)
@@ -130,7 +144,7 @@ export default function DealClient({ dealId }: Props) {
     // Reload deal after other successful transactions
     useEffect(() => {
         if (isFundSuccess || isReleaseSuccess || isRefundSuccess) {
-            setTimeout(() => loadDeal(), 2000)
+            setTimeout(() => silentRefresh(), 2000)
         }
     }, [isFundSuccess, isReleaseSuccess, isRefundSuccess])
 
@@ -438,20 +452,41 @@ export default function DealClient({ dealId }: Props) {
                                 )}
 
                                 {address && isBuyer && (
-                                    <button
-                                        onClick={handleCreateEscrow}
-                                        disabled={isAnyTxPending}
-                                        className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center justify-center gap-3"
-                                    >
-                                        {isCreating || isCreateConfirming ? (
-                                            <>
-                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                {isCreateConfirming ? 'Confirming...' : 'Creating...'}
-                                            </>
-                                        ) : (
-                                            <>🚀 Create Escrow (Buyer)</>
+                                    <div className="space-y-3">
+                                        <button
+                                            onClick={handleCreateEscrow}
+                                            disabled={isAnyTxPending}
+                                            className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center justify-center gap-3"
+                                        >
+                                            {isCreating ? (
+                                                <>
+                                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                    Waiting for wallet...
+                                                </>
+                                            ) : isCreateConfirming ? (
+                                                <>
+                                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                    Confirming on blockchain...
+                                                </>
+                                            ) : (
+                                                <>🚀 Create Escrow (Buyer)</>
+                                            )}
+                                        </button>
+
+                                        {/* Transaction Status Display */}
+                                        {(isCreating || isCreateConfirming || txStatus) && (
+                                            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                                                <p className="text-blue-300 text-sm text-center flex items-center justify-center gap-2">
+                                                    {(isCreating || isCreateConfirming) && (
+                                                        <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
+                                                    )}
+                                                    {isCreating ? 'Please confirm in your wallet...' :
+                                                        isCreateConfirming ? 'Waiting for blockchain confirmation...' :
+                                                            txStatus}
+                                                </p>
+                                            </div>
                                         )}
-                                    </button>
+                                    </div>
                                 )}
 
                                 {address && isSeller && !isBuyer && (
