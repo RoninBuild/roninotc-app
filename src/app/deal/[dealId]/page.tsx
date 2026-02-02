@@ -8,7 +8,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { dealId } = await params
   const appUrl = 'https://roninotc-app.vercel.app'
-  const imageUrl = `${appUrl}/ronin_otc_standard.jpg`
+  const imageUrl = `${appUrl}/branding_otc_final.jpg`
   const dealUrl = `${appUrl}/deal/${dealId}`
 
   return {
