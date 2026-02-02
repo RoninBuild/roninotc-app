@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi'
 import { parseUnits, keccak256, toHex, zeroAddress } from 'viem'
 import { getDeal, updateDealStatus } from '@/lib/api'
 import { FACTORY_ADDRESS, USDC_ADDRESS, factoryAbi, escrowAbi, erc20Abi, parseUsdcAmount } from '@/lib/contracts'
@@ -153,6 +153,7 @@ function Card({ children, title, className = "", showCharacter = false }: { chil
 
 export default function DealClient({ dealId }: Props) {
     const { address } = useAccount()
+    const publicClient = usePublicClient()
     const [deal, setDeal] = useState<Deal | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -180,33 +181,12 @@ export default function DealClient({ dealId }: Props) {
     const isSeller = address?.toLowerCase() === deal?.seller_address?.toLowerCase()
     const isBuyer = address?.toLowerCase() === deal?.buyer_address?.toLowerCase()
 
-    // Blockchain Reads
+    // Blockchain Reads (Basic allowance only, Escrow status moved to publicClient for reliability)
     const { data: allowance, refetch: refetchAllowance } = useReadContract({
         address: USDC_ADDRESS,
         abi: erc20Abi,
         functionName: 'allowance',
         args: address && onChainEscrow ? [address, onChainEscrow] : undefined,
-    })
-
-    const { data: buyerEscrows, refetch: refetchBuyerEscrows } = useReadContract({
-        address: FACTORY_ADDRESS,
-        abi: factoryAbi,
-        functionName: 'getBuyerEscrows',
-        args: deal?.buyer_address ? [deal.buyer_address as `0x${string}`] : undefined,
-    })
-
-    const { data: sellerEscrows, refetch: refetchSellerEscrows } = useReadContract({
-        address: FACTORY_ADDRESS,
-        abi: factoryAbi,
-        functionName: 'getSellerEscrows',
-        args: deal?.seller_address ? [deal.seller_address as `0x${string}`] : undefined,
-    })
-
-    const { data: escrowInfo, refetch: refetchEscrowInfo } = useReadContract({
-        address: onChainEscrow || undefined,
-        abi: escrowAbi,
-        functionName: 'getDealInfo',
-        args: onChainEscrow ? [] : undefined,
     })
 
     // Logic Functions
@@ -232,32 +212,56 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const syncBlockchainState = async () => {
-        if (!deal) return
+        if (!deal || !publicClient) return
         try {
+            const targetMemoHash = keccak256(toHex(deal.deal_id))
+
             if (!onChainEscrow) {
-                let escrows: `0x${string}`[] | undefined;
-                if (deal.buyer_address) {
-                    const result = await refetchBuyerEscrows()
-                    escrows = result.data as `0x${string}`[] | undefined
-                }
-                if ((!escrows || escrows.length === 0) && deal.seller_address) {
-                    const result = await refetchSellerEscrows()
-                    escrows = result.data as `0x${string}`[] | undefined
-                }
-                if (escrows && escrows.length > 0) {
-                    const sortedEscrows = [...escrows].reverse()
-                    for (const escrowAddr of sortedEscrows) {
-                        setOnChainEscrow(escrowAddr)
-                        setDeal(prev => prev ? { ...prev, escrow_address: escrowAddr, status: 'created' as Deal['status'] } : prev)
-                        try { await updateDealStatus(deal.deal_id, 'created', escrowAddr) } catch (e) { }
-                        break;
-                    }
+                let escrows: `0x${string}`[] = []
+
+                // Get escrows from both sides
+                const buyerData = await publicClient.readContract({
+                    address: FACTORY_ADDRESS,
+                    abi: factoryAbi,
+                    functionName: 'getBuyerEscrows',
+                    args: [deal.buyer_address as `0x${string}`],
+                }).catch(() => []) as `0x${string}`[]
+
+                const sellerData = await publicClient.readContract({
+                    address: FACTORY_ADDRESS,
+                    abi: factoryAbi,
+                    functionName: 'getSellerEscrows',
+                    args: [deal.seller_address as `0x${string}`],
+                }).catch(() => []) as `0x${string}`[]
+
+                escrows = Array.from(new Set([...buyerData, ...sellerData]))
+
+                // Check memoHash for each to find the right one
+                for (const escrowAddr of escrows.reverse()) {
+                    try {
+                        const info = await publicClient.readContract({
+                            address: escrowAddr,
+                            abi: escrowAbi,
+                            functionName: 'getDealInfo',
+                        }) as any
+
+                        if (info[6] === targetMemoHash) {
+                            setOnChainEscrow(escrowAddr)
+                            setDeal(prev => prev ? { ...prev, escrow_address: escrowAddr, status: 'created' as Deal['status'] } : prev)
+                            updateDealStatus(deal.deal_id, 'created', escrowAddr).catch(() => { })
+                            break
+                        }
+                    } catch (e) { }
                 }
             }
 
             if (onChainEscrow) {
-                const infoResult = await refetchEscrowInfo()
-                const info = infoResult.data as any
+                const info = await publicClient.readContract({
+                    address: onChainEscrow,
+                    abi: escrowAbi,
+                    functionName: 'getDealInfo',
+                }) as any
+
                 if (info) {
                     const chainStatus = info[7]
                     const statusMap: Record<number, string> = {
@@ -266,16 +270,17 @@ export default function DealClient({ dealId }: Props) {
                     const newStatus = statusMap[chainStatus] || 'created'
                     if (deal.status !== newStatus) {
                         setDeal(prev => prev ? { ...prev, status: newStatus as Deal['status'] } : prev)
-                        try { await updateDealStatus(deal.deal_id, newStatus, onChainEscrow) } catch (e) { }
+                        updateDealStatus(deal.deal_id, newStatus, onChainEscrow).catch(() => { })
                     }
                 }
-                await refetchAllowance()
+                refetchAllowance()
             }
-        } catch (err) { console.error(err) }
+        } catch (err) { console.error('Sync error:', err) }
     }
 
     useEffect(() => { loadDeal(true) }, [dealId])
     useEffect(() => { if (deal) syncBlockchainState() }, [deal?.deal_id, deal?.buyer_address])
+
     useEffect(() => {
         if (!deal) return
         const interval = setInterval(() => syncBlockchainState(), 5000)
