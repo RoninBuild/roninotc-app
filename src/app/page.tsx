@@ -1,11 +1,19 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function Home() {
   const [dealId, setDealId] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const qDealId = searchParams.get('dealId')
+    if (qDealId) {
+      router.push(`/deal/${qDealId}`)
+    }
+  }, [searchParams, router])
 
   const handleOpenDeal = () => {
     if (dealId.trim()) {
