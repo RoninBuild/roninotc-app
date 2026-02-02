@@ -342,6 +342,8 @@ export default function DealClient({ dealId }: Props) {
 
     const needsApproval = !!(deal?.escrow_address && allowance !== undefined && allowance < parseUsdcAmount(deal.amount))
 
+    const isDeadlinePassed = deal ? Date.now() > deal.deadline * 1000 : false
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#050505] flex items-center justify-center font-black">
@@ -360,14 +362,16 @@ export default function DealClient({ dealId }: Props) {
         )
     }
 
-    const statusConfig = {
+    const statusConfigs: Record<string, { label: string; color: string }> = {
         draft: { label: 'DRAFT', color: 'text-zinc-500' },
         created: { label: 'CREATED', color: 'text-blue-500' },
         funded: { label: 'FUNDED', color: 'text-green-500' },
         released: { label: 'COMPLETED', color: 'text-purple-500' },
         refunded: { label: 'REFUNDED', color: 'text-red-500' },
-        disputed: { label: 'DISPUTE', color: 'text-orange-500' }
-    }[deal.status] || { label: deal.status.toUpperCase(), color: 'text-white' }
+        disputed: { label: 'DISPUTE', color: 'text-orange-500' },
+        resolved: { label: 'RESOLVED', color: 'text-cyan-500' }
+    }
+    const statusConfig = statusConfigs[deal.status] || { label: (deal.status as string).toUpperCase(), color: 'text-white' }
 
     return (
         <div className="min-h-screen bg-[#050505] relative overflow-hidden font-sans pb-20">
