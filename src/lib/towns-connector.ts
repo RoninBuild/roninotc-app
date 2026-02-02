@@ -21,7 +21,7 @@ export function townsConnector() {
         } = {}) {
             const { chainId } = params
             try {
-                const { provider } = await sdk.wallet.getEthereumProvider()
+                const provider = await sdk.wallet.getEthereumProvider()
 
                 // Ensure requested chain is supported/selected if provided
                 if (chainId) {
@@ -51,21 +51,21 @@ export function townsConnector() {
             // Towns SDK doesn't have a manual disconnect for the injected provider
         },
         async getAccounts() {
-            const { provider } = await sdk.wallet.getEthereumProvider()
+            const provider = await sdk.wallet.getEthereumProvider()
             return await provider.request({ method: 'eth_accounts' }) as Address[]
         },
         async getChainId() {
-            const { provider } = await sdk.wallet.getEthereumProvider()
+            const provider = await sdk.wallet.getEthereumProvider()
             const chainId = await provider.request({ method: 'eth_chainId' }) as string
             return parseInt(chainId, 16)
         },
         async getProvider() {
-            const { provider } = await sdk.wallet.getEthereumProvider()
+            const provider = await sdk.wallet.getEthereumProvider()
             return provider
         },
         async isAuthorized() {
             try {
-                const { provider } = await sdk.wallet.getEthereumProvider()
+                const provider = await sdk.wallet.getEthereumProvider()
                 const accounts = await provider.request({ method: 'eth_accounts' }) as Address[]
                 return accounts.length > 0
             } catch {
