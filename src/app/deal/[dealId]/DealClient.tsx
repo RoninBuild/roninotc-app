@@ -93,7 +93,7 @@ function GlobalInteractiveGrid() {
 // Refined Eyes / Peeking Logic (Minimalist, Eyes Only)
 function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: number }, isHovered: boolean }) {
     return (
-        <div className="absolute left-1/2 -top-[120px] -translate-x-1/2 w-[300px] h-[100px] pointer-events-none z-[-1] overflow-visible transition-all duration-700">
+        <div className="absolute left-1/2 -top-[170px] -translate-x-1/2 w-[300px] h-[100px] pointer-events-none z-[-1] overflow-visible transition-all duration-700">
             {/* Eyes Container - Peeking from the void between frames */}
             <div
                 className="relative w-full h-full"
