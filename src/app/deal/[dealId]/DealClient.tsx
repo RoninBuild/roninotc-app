@@ -91,27 +91,25 @@ function GlobalInteractiveGrid() {
 
 function CharacterPeeker({ mousePos }: { mousePos: { x: number, y: number } }) {
     return (
-        <div className="absolute -left-32 -top-48 w-[400px] h-[400px] pointer-events-none z-[-1] opacity-30 overflow-visible transition-opacity duration-1000 group-hover/card:opacity-50">
+        <div className="absolute left-1/2 -top-56 -translate-x-1/2 w-[450px] h-[450px] pointer-events-none z-[-1] opacity-30 overflow-visible transition-opacity duration-1000 group-hover/card:opacity-50">
             <div
                 className="relative w-full h-full animate-[zoom-breathing_12s_infinite_ease-in-out]"
                 style={{
-                    transform: `translate(${mousePos.x * 0.02}px, ${mousePos.y * 0.02}px)`,
+                    transform: `translate(${mousePos.x * 0.01}px, ${mousePos.y * 0.01}px)`,
+                    maskImage: 'radial-gradient(circle, black 40%, transparent 75%)',
+                    WebkitMaskImage: 'radial-gradient(circle, black 40%, transparent 75%)'
                 }}
             >
                 {/* Image with filters for grayscale look */}
                 <img
                     src="/assets/ronin.png"
                     alt="Ronin"
-                    className="w-full h-full object-contain filter saturate-0 contrast-125 brightness-75 mix-blend-screen"
-                    style={{
-                        maskImage: 'linear-gradient(to bottom, black 50%, transparent 95%)',
-                        WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 95%)'
-                    }}
+                    className="w-full h-full object-contain filter saturate-0 contrast-125 brightness-90 mix-blend-screen"
                 />
 
-                {/* Glowing Purple Eyes - Positioned lower to match the white slits in ronin.png */}
-                <div className="absolute top-[43.5%] left-[43%] w-2.5 h-1.5 bg-[#BF80FF] rounded-full blur-[2px] shadow-[0_0_20px_#A855F7] animate-[character-eye_6s_infinite] brightness-125" />
-                <div className="absolute top-[43.5%] left-[54%] w-2.5 h-1.5 bg-[#BF80FF] rounded-full blur-[2px] shadow-[0_0_20px_#A855F7] animate-[character-eye_6s_infinite] [animation-delay:0.3s] brightness-125" />
+                {/* Glowing Purple Eyes - Positioned lower and slightly larger */}
+                <div className="absolute top-[44%] left-[43%] w-3 h-2 bg-[#D1A3FF] rounded-full blur-[2px] shadow-[0_0_20px_#A855F7] animate-[character-eye_6s_infinite] brightness-150" />
+                <div className="absolute top-[44%] left-[54%] w-3 h-2 bg-[#D1A3FF] rounded-full blur-[2px] shadow-[0_0_20px_#A855F7] animate-[character-eye_6s_infinite] [animation-delay:0.3s] brightness-150" />
             </div>
         </div>
     )
