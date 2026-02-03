@@ -96,6 +96,13 @@ export const escrowAbi = [
         ],
         stateMutability: 'view',
     },
+    {
+        type: 'function',
+        name: 'resolveDispute',
+        inputs: [{ name: '_winner', type: 'address' }],
+        outputs: [],
+        stateMutability: 'nonpayable',
+    },
 ] as const
 
 export const erc20Abi = [

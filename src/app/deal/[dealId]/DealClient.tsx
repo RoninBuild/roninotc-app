@@ -169,6 +169,7 @@ export default function DealClient({ dealId }: Props) {
     const { writeContract: releaseEscrow, data: releaseHash, isPending: isReleasing } = useWriteContract()
     const { writeContract: refundEscrow, data: refundHash, isPending: isRefunding } = useWriteContract()
     const { writeContract: openDispute, data: disputeHash, isPending: isDisputing } = useWriteContract()
+    const { writeContract: resolveDispute, data: resolveHash, isPending: isResolving } = useWriteContract()
 
     // Transaction confirmations
     const { isLoading: isCreateConfirming, isSuccess: isCreateSuccess, data: createReceipt } = useWaitForTransactionReceipt({ hash: createHash })
@@ -177,6 +178,7 @@ export default function DealClient({ dealId }: Props) {
     const { isLoading: isReleaseConfirming, isSuccess: isReleaseSuccess } = useWaitForTransactionReceipt({ hash: releaseHash })
     const { isLoading: isRefundConfirming, isSuccess: isRefundSuccess } = useWaitForTransactionReceipt({ hash: refundHash })
     const { isLoading: isDisputeConfirming, isSuccess: isDisputeSuccess } = useWaitForTransactionReceipt({ hash: disputeHash })
+    const { isLoading: isResolveConfirming, isSuccess: isResolveSuccess } = useWaitForTransactionReceipt({ hash: resolveHash })
 
     const isSeller = address?.toLowerCase() === deal?.seller_address?.toLowerCase()
     const isBuyer = address?.toLowerCase() === deal?.buyer_address?.toLowerCase()
@@ -318,10 +320,10 @@ export default function DealClient({ dealId }: Props) {
     }, [isCreateSuccess, createReceipt])
 
     useEffect(() => {
-        if (isFundSuccess || isReleaseSuccess || isRefundSuccess || isDisputeSuccess) {
+        if (isFundSuccess || isReleaseSuccess || isRefundSuccess || isDisputeSuccess || isResolveSuccess) {
             setTimeout(() => syncBlockchainState(), 2000)
         }
-    }, [isFundSuccess, isReleaseSuccess, isRefundSuccess, isDisputeSuccess])
+    }, [isFundSuccess, isReleaseSuccess, isRefundSuccess, isDisputeSuccess, isResolveSuccess])
 
     const handleTx = async (fn: any, statusText: string) => {
         try {
