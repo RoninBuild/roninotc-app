@@ -90,32 +90,35 @@ function GlobalInteractiveGrid() {
     )
 }
 
-// Eyes and peeking logic update
+// Refined Eyes / Peeking Logic
 function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: number }, isHovered: boolean }) {
     return (
-        <div className="absolute left-1/2 -top-40 -translate-x-1/2 w-[450px] h-[450px] pointer-events-none z-[-1] overflow-visible transition-all duration-700">
+        <div className="absolute left-1/2 -top-[160px] -translate-x-1/2 w-[400px] h-[300px] pointer-events-none z-[-1] overflow-hidden transition-all duration-700">
             {/* Tighter Semi-circular shadow / Glow behind */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.8)_0%,transparent_70%)] opacity-80" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(0,0,0,0.9)_0%,transparent_70%)] opacity-90" />
 
             <div
                 className="relative w-full h-full animate-[zoom-breathing_12s_infinite_ease-in-out]"
                 style={{
-                    transform: `translate(${mousePos.x * 0.005}px, ${mousePos.y * 0.005}px)`,
+                    transform: `translate(${mousePos.x * 0.002}px, ${mousePos.y * 0.002}px)`,
                 }}
             >
-                {/* Image - Darkened significantly, barely visible silhouette */}
+                {/* Image - Darkened silhouette, almost invisible, just a holder for structure if needed, or fully hidden if requested "body not visible at all" */}
+                {/* User asked: "personage... should not be visible in frames at all". "eyes are two dots... looking between frames". */}
+                {/* We keep the image barely visible as a dark silhouette for "presence" but mostly hidden. */}
                 <img
                     src="/assets/ronin.png"
                     alt="Ronin"
-                    className="w-full h-full object-contain filter brightness-0 opacity-40 transition-all duration-700"
+                    className="w-full h-full object-cover object-top filter brightness-0 opacity-0 transition-all duration-700"
                 />
 
-                {/* Glowing White Eyes - Blinking */}
+                {/* Glowing Purple Eyes - Blinking - Positioned manually to look like they are peeking from the gap */}
+                {/* Adjusted positions based on standard ronin asset face location relative to top */}
                 <div
-                    className="absolute top-[44%] left-[43%] w-1.5 h-1.5 bg-white rounded-full blur-[0.5px] animate-[blink_4s_infinite_ease-in-out] shadow-[0_0_15px_white]"
+                    className="absolute top-[35%] left-[45%] w-2 h-1.5 bg-[#A855F7] rounded-full blur-[1px] animate-[blink_4s_infinite_ease-in-out] shadow-[0_0_15px_#A855F7]"
                 />
                 <div
-                    className="absolute top-[44%] left-[54%] w-1.5 h-1.5 bg-white rounded-full blur-[0.5px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s] shadow-[0_0_15px_white]"
+                    className="absolute top-[35%] left-[53%] w-2 h-1.5 bg-[#A855F7] rounded-full blur-[1px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s] shadow-[0_0_15px_#A855F7]"
                 />
             </div>
         </div>
@@ -773,15 +776,15 @@ export default function DealClient({ dealId }: Props) {
                     <Card title="PROTOCOL FEES">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-16">
                             <p className="text-zinc-500 text-2xl font-bold max-w-xl">Fully decentralized OTC trading. Only 0.1% commission when paying with TOWNS.</p>
-                            <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-8">
                                 <div className="flex flex-col items-end">
-                                    <span className="text-green-500 font-black text-xs tracking-tighter animate-pulse mb-1">ACTIVE SYSTEM</span>
-                                    <div className="relative group/toggle flex items-center bg-zinc-900 border-2 border-zinc-800 p-1 rounded-full w-24 h-12 transition-all hover:border-green-500/50 hover:shadow-[0_0_15px_rgba(34,197,94,0.2)]">
-                                        <div className="absolute right-1 w-10 h-10 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e] transition-transform" />
-                                        <span className="ml-3 text-[10px] font-black text-green-500/80">ON</span>
+                                    <span className="text-green-500 font-black text-xs tracking-tighter animate-pulse mb-2">ACTIVE SYSTEM</span>
+                                    <div className="relative group/toggle flex items-center bg-zinc-900 border-2 border-zinc-800 p-1.5 rounded-full w-36 h-20 transition-all hover:border-green-500/50 hover:shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                                        <div className="absolute right-2 w-16 h-16 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e] transition-transform" />
+                                        <span className="ml-5 text-sm font-black text-green-500/80 tracking-widest">ON</span>
                                     </div>
                                 </div>
-                                <div className="px-10 py-6 border-4 border-white/10 text-white font-black uppercase tracking-widest text-3xl transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/5 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group">
+                                <div className="px-12 py-8 border-4 border-white/10 text-white font-black uppercase tracking-widest text-4xl whitespace-nowrap transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/5 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group">
                                     $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all">TOWNS</span> 0.1%
                                 </div>
                             </div>
