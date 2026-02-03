@@ -103,6 +103,23 @@ export const escrowAbi = [
         outputs: [],
         stateMutability: 'nonpayable',
     },
+    {
+        type: 'event',
+        name: 'DisputeOpened',
+        inputs: [
+            { name: 'initiator', type: 'address', indexed: true },
+            { name: 'timestamp', type: 'uint256', indexed: false },
+        ],
+    },
+    {
+        type: 'event',
+        name: 'DisputeResolved',
+        inputs: [
+            { name: 'winner', type: 'address', indexed: true },
+            { name: 'amount', type: 'uint256', indexed: false },
+            { name: 'timestamp', type: 'uint256', indexed: false },
+        ],
+    },
 ] as const
 
 export const erc20Abi = [

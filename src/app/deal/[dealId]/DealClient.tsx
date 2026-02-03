@@ -161,6 +161,7 @@ export default function DealClient({ dealId }: Props) {
 
     // On-chain state
     const [onChainEscrow, setOnChainEscrow] = useState<`0x${string}` | null>(null)
+    const [winnerAddr, setWinnerAddr] = useState<string | null>(null)
 
     // Contract write hooks
     const { writeContract: createEscrow, data: createHash, isPending: isCreating } = useWriteContract()
@@ -273,9 +274,26 @@ export default function DealClient({ dealId }: Props) {
                 if (info) {
                     const chainStatus = info[7]
                     const statusMap: Record<number, string> = {
-                        0: 'created', 1: 'funded', 2: 'released', 3: 'refunded', 4: 'disputed',
+                        0: 'created', 1: 'funded', 2: 'released', 3: 'refunded', 4: 'disputed', 5: 'resolved',
                     }
                     const newStatus = statusMap[chainStatus] || 'created'
+
+                    if (newStatus === 'resolved' && !winnerAddr) {
+                        try {
+                            const logs = await publicClient.getContractEvents({
+                                address: onChainEscrow,
+                                abi: escrowAbi,
+                                eventName: 'DisputeResolved',
+                                fromBlock: BigInt(0),
+                            })
+                            if (logs.length > 0) {
+                                setWinnerAddr(logs[0].args.winner as string)
+                            }
+                        } catch (e) {
+                            console.error('Failed to fetch resolution logs', e)
+                        }
+                    }
+
                     if (deal.status !== newStatus) {
                         setDeal(prev => prev ? { ...prev, status: newStatus as Deal['status'] } : prev)
                         updateDealStatus(deal.deal_id, newStatus, onChainEscrow).catch(() => { })
@@ -680,7 +698,13 @@ export default function DealClient({ dealId }: Props) {
                                 <p className="text-zinc-400 max-w-xl mx-auto text-2xl font-bold italic">
                                     {deal.status === 'released' ? 'Assets successfully transferred to target address.' :
                                         deal.status === 'refunded' ? 'Funds returned to originator.' :
-                                            deal.status === 'resolved' ? 'Arbitrator has properly distributed the funds.' :
+                                            deal.status === 'resolved' ? (
+                                                winnerAddr ? (
+                                                    winnerAddr.toLowerCase() === deal.seller_address.toLowerCase()
+                                                        ? 'Arbiter resolved dispute in favor of SELLER. Funds transferred.'
+                                                        : 'Arbiter resolved dispute in favor of BUYER. Funds returned.'
+                                                ) : 'Arbitrator has properly distributed the funds.'
+                                            ) :
                                                 'Protocol arbiter is reviewing the transaction.'}
                                 </p>
 
