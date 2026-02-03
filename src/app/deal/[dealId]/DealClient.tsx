@@ -667,19 +667,63 @@ export default function DealClient({ dealId }: Props) {
                             </div>
                         )}
 
-                        {(deal.status === 'released' || deal.status === 'refunded' || deal.status === 'disputed') && (
+                        {(deal.status === 'released' || deal.status === 'refunded' || deal.status === 'disputed' || deal.status === 'resolved') && (
                             <div className="text-center py-20 space-y-10 border-4 border-white bg-white/5">
                                 <div className="text-9xl mb-8">
-                                    {deal.status === 'released' ? '💎' : deal.status === 'refunded' ? '↩️' : '⚖️'}
+                                    {deal.status === 'released' ? '💎' : deal.status === 'refunded' ? '↩️' : deal.status === 'resolved' ? '⚖️✅' : '⚖️'}
                                 </div>
                                 <h4 className="text-6xl font-black text-white uppercase tracking-tighter">
-                                    {deal.status === 'released' ? 'DEAL COMPLETED' : deal.status === 'refunded' ? 'DEAL REFUNDED' : 'DEAL IN DISPUTE'}
+                                    {deal.status === 'released' ? 'DEAL COMPLETED' : deal.status === 'refunded' ? 'DEAL REFUNDED' : deal.status === 'resolved' ? 'DISPUTE RESOLVED' : 'DEAL IN DISPUTE'}
                                 </h4>
                                 <p className="text-zinc-400 max-w-xl mx-auto text-2xl font-bold italic">
                                     {deal.status === 'released' ? 'Assets successfully transferred to target address.' :
                                         deal.status === 'refunded' ? 'Funds returned to originator.' :
-                                            'Protocol arbiter is reviewing the transaction.'}
+                                            deal.status === 'resolved' ? 'Arbitrator has properly distributed the funds.' :
+                                                'Protocol arbiter is reviewing the transaction.'}
                                 </p>
+
+                                {/* Arbitrator Actions */}
+                                {deal.status === 'disputed' && address?.toLowerCase() === ARBITRATOR_ADDRESS.toLowerCase() && (
+                                    <div className="mt-10 p-10 border-t-4 border-white/10">
+                                        <p className="text-orange-500 font-black uppercase tracking-widest text-xl mb-6">👮 ARBITRATOR CONTROLS</p>
+                                        <div className="grid grid-cols-2 gap-8">
+                                            <button
+                                                onClick={() => handleTx(() => openDispute({ // reusing write hook for simplicity or need new specialized ones? 
+                                                    // Wait, need to call resolveDispute(winner). 
+                                                    // ABI check: resolveDispute(address _winner)
+                                                    address: deal.escrow_address as `0x${string}`,
+                                                    abi: [{
+                                                        type: 'function',
+                                                        name: 'resolveDispute',
+                                                        inputs: [{ name: '_winner', type: 'address' }],
+                                                        outputs: [],
+                                                        stateMutability: 'nonpayable'
+                                                    }],
+                                                    functionName: 'resolveDispute',
+                                                    args: [deal.buyer_address as `0x${string}`] // Resolve to Buyer (Refund)
+                                                }), 'Ruling for Buyer...')}
+                                                className="py-6 border-4 border-white hover:bg-white hover:text-black font-black uppercase tracking-widest transition-all">
+                                                WINNER: BUYER
+                                            </button>
+                                            <button
+                                                onClick={() => handleTx(() => openDispute({
+                                                    address: deal.escrow_address as `0x${string}`,
+                                                    abi: [{
+                                                        type: 'function',
+                                                        name: 'resolveDispute',
+                                                        inputs: [{ name: '_winner', type: 'address' }],
+                                                        outputs: [],
+                                                        stateMutability: 'nonpayable'
+                                                    }],
+                                                    functionName: 'resolveDispute',
+                                                    args: [deal.seller_address as `0x${string}`] // Resolve to Seller (Release)
+                                                }), 'Ruling for Seller...')}
+                                                className="py-6 bg-white text-black hover:bg-zinc-200 font-black uppercase tracking-widest transition-all">
+                                                WINNER: SELLER
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
