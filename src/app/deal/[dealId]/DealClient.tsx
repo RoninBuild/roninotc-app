@@ -90,40 +90,48 @@ function GlobalInteractiveGrid() {
     )
 }
 
-// Refined Eyes / Peeking Logic
+// Refined Eyes / Peeking Logic (Minimalist, Eyes Only)
 function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: number }, isHovered: boolean }) {
     return (
-        <div className="absolute left-1/2 -top-[160px] -translate-x-1/2 w-[400px] h-[300px] pointer-events-none z-[-1] overflow-hidden transition-all duration-700">
-            {/* Tighter Semi-circular shadow / Glow behind */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(0,0,0,0.9)_0%,transparent_70%)] opacity-90" />
-
+        <div className="absolute left-1/2 -top-[120px] -translate-x-1/2 w-[300px] h-[100px] pointer-events-none z-[-1] overflow-visible transition-all duration-700">
+            {/* Eyes Container - Peeking from the void between frames */}
             <div
-                className="relative w-full h-full animate-[zoom-breathing_12s_infinite_ease-in-out]"
+                className="relative w-full h-full"
                 style={{
-                    transform: `translate(${mousePos.x * 0.002}px, ${mousePos.y * 0.002}px)`,
+                    transform: `translate(${mousePos.x * 0.005}px, ${mousePos.y * 0.005}px)`,
                 }}
             >
-                {/* Image - Darkened silhouette, almost invisible, just a holder for structure if needed, or fully hidden if requested "body not visible at all" */}
-                {/* User asked: "personage... should not be visible in frames at all". "eyes are two dots... looking between frames". */}
-                {/* We keep the image barely visible as a dark silhouette for "presence" but mostly hidden. */}
-                <img
-                    src="/assets/ronin.png"
-                    alt="Ronin"
-                    className="w-full h-full object-cover object-top filter brightness-0 opacity-0 transition-all duration-700"
-                />
-
-                {/* Glowing Purple Eyes - Blinking - Positioned manually to look like they are peeking from the gap */}
-                {/* Adjusted positions based on standard ronin asset face location relative to top */}
+                {/* Glowing Purple Eyes - Blinking */}
                 <div
-                    className="absolute top-[35%] left-[45%] w-2 h-1.5 bg-[#A855F7] rounded-full blur-[1px] animate-[blink_4s_infinite_ease-in-out] shadow-[0_0_15px_#A855F7]"
+                    className="absolute top-1/2 left-[40%] w-3 h-2 bg-[#A855F7] rounded-full blur-[2px] animate-[blink_4s_infinite_ease-in-out] shadow-[0_0_20px_#A855F7]"
                 />
                 <div
-                    className="absolute top-[35%] left-[53%] w-2 h-1.5 bg-[#A855F7] rounded-full blur-[1px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s] shadow-[0_0_15px_#A855F7]"
+                    className="absolute top-1/2 left-[60%] w-3 h-2 bg-[#A855F7] rounded-full blur-[2px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s] shadow-[0_0_20px_#A855F7]"
                 />
             </div>
         </div>
     )
 }
+
+// ... inside generic component ...
+
+<Card title="PROTOCOL FEES">
+    <div className="flex flex-col md:flex-row justify-between items-center gap-16">
+        <p className="text-zinc-400 text-xl font-medium max-w-xl">Fully decentralized OTC trading. Only 0.1% commission when paying with TOWNS.</p>
+        <div className="flex items-center gap-8">
+            <div className="flex flex-col items-end">
+                <span className="text-green-500 font-black text-xs tracking-tighter animate-pulse mb-2 uppercase">Active System</span>
+                <div className="relative group/toggle flex items-center bg-zinc-950 border-4 border-zinc-800 p-1.5 rounded-full w-40 h-20 transition-all hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+                    <div className="absolute right-2 w-14 h-14 bg-green-500 rounded-full shadow-[0_0_15px_#22c55e] transition-transform" />
+                    <span className="ml-6 text-base font-black text-green-500 tracking-widest">ON</span>
+                </div>
+            </div>
+            <div className="px-12 py-6 border-4 border-white/10 text-white font-black uppercase tracking-widest text-4xl whitespace-nowrap bg-white/5 transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/10 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group rounded-xl">
+                $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all">TOWNS</span> 0.1%
+            </div>
+        </div>
+    </div>
+</Card>
 
 function Card({ children, title, className = "", showCharacter = false }: { children: React.ReactNode, title?: string, className?: string, showCharacter?: boolean }) {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
@@ -775,16 +783,16 @@ export default function DealClient({ dealId }: Props) {
                 <div className="pt-20 space-y-20">
                     <Card title="PROTOCOL FEES">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-16">
-                            <p className="text-zinc-500 text-2xl font-bold max-w-xl">Fully decentralized OTC trading. Only 0.1% commission when paying with TOWNS.</p>
+                            <p className="text-zinc-400 text-xl font-medium max-w-xl">Fully decentralized OTC trading. Only 0.1% commission when paying with TOWNS.</p>
                             <div className="flex items-center gap-8">
                                 <div className="flex flex-col items-end">
-                                    <span className="text-green-500 font-black text-xs tracking-tighter animate-pulse mb-2">ACTIVE SYSTEM</span>
-                                    <div className="relative group/toggle flex items-center bg-zinc-900 border-2 border-zinc-800 p-1.5 rounded-full w-36 h-20 transition-all hover:border-green-500/50 hover:shadow-[0_0_15px_rgba(34,197,94,0.2)]">
-                                        <div className="absolute right-2 w-16 h-16 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e] transition-transform" />
-                                        <span className="ml-5 text-sm font-black text-green-500/80 tracking-widest">ON</span>
+                                    <span className="text-green-500 font-black text-xs tracking-tighter animate-pulse mb-2 uppercase">Active System</span>
+                                    <div className="relative group/toggle flex items-center bg-zinc-950 border-4 border-zinc-800 p-1.5 rounded-full w-40 h-20 transition-all hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+                                        <div className="absolute right-2 w-14 h-14 bg-green-500 rounded-full shadow-[0_0_15px_#22c55e] transition-transform" />
+                                        <span className="ml-6 text-base font-black text-green-500 tracking-widest">ON</span>
                                     </div>
                                 </div>
-                                <div className="px-12 py-8 border-4 border-white/10 text-white font-black uppercase tracking-widest text-4xl whitespace-nowrap transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/5 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group">
+                                <div className="px-12 py-6 border-4 border-white/10 text-white font-black uppercase tracking-widest text-4xl whitespace-nowrap bg-white/5 transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/10 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group rounded-xl">
                                     $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all">TOWNS</span> 0.1%
                                 </div>
                             </div>
