@@ -89,24 +89,29 @@ function GlobalInteractiveGrid() {
     )
 }
 
-function CharacterPeeker() {
+function CharacterPeeker({ mousePos }: { mousePos: { x: number, y: number } }) {
     return (
-        <div className="absolute -left-32 -top-40 w-[300px] h-[300px] pointer-events-none z-0 opacity-40 overflow-visible group-hover/card:opacity-60 transition-opacity duration-1000">
-            <div className="relative w-full h-full">
+        <div className="absolute -left-32 -top-48 w-[400px] h-[400px] pointer-events-none z-[-1] opacity-30 overflow-visible transition-opacity duration-1000 group-hover/card:opacity-50">
+            <div
+                className="relative w-full h-full animate-[zoom-breathing_12s_infinite_ease-in-out]"
+                style={{
+                    transform: `translate(${mousePos.x * 0.02}px, ${mousePos.y * 0.02}px)`,
+                }}
+            >
                 {/* Image with filters for grayscale look */}
                 <img
                     src="/assets/ronin.png"
                     alt="Ronin"
-                    className="w-full h-full object-contain filter saturate-0 contrast-125 brightness-50 mix-blend-screen"
+                    className="w-full h-full object-contain filter saturate-0 contrast-125 brightness-75 mix-blend-screen"
                     style={{
                         maskImage: 'linear-gradient(to bottom, black 50%, transparent 95%)',
                         WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 95%)'
                     }}
                 />
 
-                {/* Glowing Purple Eyes - Positioned to match the head in ronin.png */}
-                <div className="absolute top-[38%] left-[42%] w-2 h-2 bg-[#A855F7] rounded-full blur-[3px] shadow-[0_0_15px_#A855F7] animate-[character-eye_8s_infinite]" />
-                <div className="absolute top-[38%] left-[55%] w-2 h-2 bg-[#A855F7] rounded-full blur-[3px] shadow-[0_0_15px_#A855F7] animate-[character-eye_8s_infinite] [animation-delay:0.5s]" />
+                {/* Glowing Purple Eyes - Positioned lower to match the white slits in ronin.png */}
+                <div className="absolute top-[43.5%] left-[43%] w-2.5 h-1.5 bg-[#BF80FF] rounded-full blur-[2px] shadow-[0_0_20px_#A855F7] animate-[character-eye_6s_infinite] brightness-125" />
+                <div className="absolute top-[43.5%] left-[54%] w-2.5 h-1.5 bg-[#BF80FF] rounded-full blur-[2px] shadow-[0_0_20px_#A855F7] animate-[character-eye_6s_infinite] [animation-delay:0.3s] brightness-125" />
             </div>
         </div>
     )
@@ -144,7 +149,7 @@ function Card({ children, title, className = "", showCharacter = false }: { chil
             />
             <div className="card-grid-glow opacity-30" />
 
-            {showCharacter && <CharacterPeeker />}
+            {showCharacter && <CharacterPeeker mousePos={mousePos} />}
 
             <div className="relative z-10">
                 {title && (

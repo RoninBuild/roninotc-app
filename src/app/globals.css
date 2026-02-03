@@ -138,12 +138,24 @@
   55%,
   100% {
     transform: scaleY(1);
-    opacity: 0.8;
+    opacity: 0.9;
   }
 
   50% {
     transform: scaleY(0.1);
-    opacity: 0.2;
+    opacity: 0.3;
+  }
+}
+
+@keyframes zoom-breathing {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
   }
 }
 
