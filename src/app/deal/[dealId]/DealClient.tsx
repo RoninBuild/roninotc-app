@@ -91,15 +91,22 @@ function GlobalInteractiveGrid() {
 
 function CharacterPeeker() {
     return (
-        <div className="absolute -left-20 top-1/2 -translate-y-1/2 rotate-[160deg] pointer-events-none z-0">
-            {/* Character Base - Peeking with blinking eyes */}
-            <div className="relative w-28 h-28 bg-[#09090b] rounded-full border-[6px] border-white overflow-hidden shadow-2xl">
-                <div className="absolute inset-0 bg-noise opacity-30" />
-                {/* Eyes */}
-                <div className="absolute top-[35%] left-[25%] w-5 h-7 bg-white rounded-full character-eye shadow-[0_0_15px_rgba(255,255,255,0.5)]" />
-                <div className="absolute top-[35%] right-[25%] w-5 h-7 bg-white rounded-full character-eye shadow-[0_0_15px_rgba(255,255,255,0.5)]" style={{ animationDelay: '0.8s' }} />
-                {/* Subtle detail */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-8 h-1 bg-white/20 rounded-full" />
+        <div className="absolute -left-32 -top-40 w-[300px] h-[300px] pointer-events-none z-0 opacity-40 overflow-visible group-hover/card:opacity-60 transition-opacity duration-1000">
+            <div className="relative w-full h-full">
+                {/* Image with filters for grayscale look */}
+                <img
+                    src="/assets/ronin.png"
+                    alt="Ronin"
+                    className="w-full h-full object-contain filter saturate-0 contrast-125 brightness-50 mix-blend-screen"
+                    style={{
+                        maskImage: 'linear-gradient(to bottom, black 50%, transparent 95%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 95%)'
+                    }}
+                />
+
+                {/* Glowing Purple Eyes - Positioned to match the head in ronin.png */}
+                <div className="absolute top-[38%] left-[42%] w-2 h-2 bg-[#A855F7] rounded-full blur-[3px] shadow-[0_0_15px_#A855F7] animate-[character-eye_8s_infinite]" />
+                <div className="absolute top-[38%] left-[55%] w-2 h-2 bg-[#A855F7] rounded-full blur-[3px] shadow-[0_0_15px_#A855F7] animate-[character-eye_8s_infinite] [animation-delay:0.5s]" />
             </div>
         </div>
     )

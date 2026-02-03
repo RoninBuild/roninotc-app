@@ -131,6 +131,22 @@
   z-index: 0;
 }
 
+@keyframes character-eye {
+
+  0%,
+  45%,
+  55%,
+  100% {
+    transform: scaleY(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scaleY(0.1);
+    opacity: 0.2;
+  }
+}
+
 .text-brand-gradient {
   background: linear-gradient(to right, #ffffff 40%, #A855F7 100%);
   -webkit-background-clip: text;
