@@ -89,27 +89,36 @@ function GlobalInteractiveGrid() {
     )
 }
 
-function CharacterPeeker({ mousePos }: { mousePos: { x: number, y: number } }) {
+function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: number }, isHovered: boolean }) {
     return (
-        <div className="absolute left-1/2 -top-56 -translate-x-1/2 w-[450px] h-[450px] pointer-events-none z-[-1] opacity-30 overflow-visible transition-opacity duration-1000 group-hover/card:opacity-50">
+        <div className="absolute left-1/2 -top-56 -translate-x-1/2 w-[450px] h-[450px] pointer-events-none z-[-1] overflow-visible transition-all duration-700">
+            {/* Tighter Semi-circular shadow / Glow behind */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.6)_0%,transparent_60%)] opacity-60" />
+
             <div
                 className="relative w-full h-full animate-[zoom-breathing_12s_infinite_ease-in-out]"
                 style={{
                     transform: `translate(${mousePos.x * 0.01}px, ${mousePos.y * 0.01}px)`,
-                    maskImage: 'radial-gradient(circle, black 40%, transparent 75%)',
-                    WebkitMaskImage: 'radial-gradient(circle, black 40%, transparent 75%)'
+                    maskImage: 'radial-gradient(circle, black 25%, transparent 55%)',
+                    WebkitMaskImage: 'radial-gradient(circle, black 25%, transparent 55%)'
                 }}
             >
-                {/* Image with filters for grayscale look */}
+                {/* Image with extreme transparency and grayscale look */}
                 <img
                     src="/assets/ronin.png"
                     alt="Ronin"
-                    className="w-full h-full object-contain filter saturate-0 contrast-125 brightness-90 mix-blend-screen"
+                    className={`w-full h-full object-contain filter contrast-125 mix-blend-screen transition-all duration-700 ${isHovered ? 'brightness-110 saturate-[0.1] opacity-30 px-4' : 'saturate-0 brightness-75 opacity-10'}`}
                 />
 
-                {/* Glowing Purple Eyes - Positioned lower and slightly larger */}
-                <div className="absolute top-[44%] left-[43%] w-3 h-2 bg-[#D1A3FF] rounded-full blur-[2px] shadow-[0_0_20px_#A855F7] animate-[character-eye_6s_infinite] brightness-150" />
-                <div className="absolute top-[44%] left-[54%] w-3 h-2 bg-[#D1A3FF] rounded-full blur-[2px] shadow-[0_0_20px_#A855F7] animate-[character-eye_6s_infinite] [animation-delay:0.3s] brightness-150" />
+                {/* Glowing Purple Eyes - More subtle but distinct */}
+                <div
+                    className="absolute top-[44%] left-[43%] w-2 h-1.5 bg-[#BF40BF] rounded-full blur-[1px] animate-[character-eye_6s_infinite] shadow-[0_0_10px_#BF40BF,0_0_20px_#A855F7]"
+                    style={{ filter: 'drop-shadow(0 0 3px #BF40BF)' }}
+                />
+                <div
+                    className="absolute top-[44%] left-[54%] w-2 h-1.5 bg-[#BF40BF] rounded-full blur-[1px] animate-[character-eye_6s_infinite] [animation-delay:0.3s] shadow-[0_0_10px_#BF40BF,0_0_20px_#A855F7]"
+                    style={{ filter: 'drop-shadow(0 0 3px #BF40BF)' }}
+                />
             </div>
         </div>
     )
@@ -117,6 +126,7 @@ function CharacterPeeker({ mousePos }: { mousePos: { x: number, y: number } }) {
 
 function Card({ children, title, className = "", showCharacter = false }: { children: React.ReactNode, title?: string, className?: string, showCharacter?: boolean }) {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+    const [isHovered, setIsHovered] = useState(false)
     const cardRef = useRef<HTMLDivElement>(null)
 
     const handleMouseMove = (e: React.MouseEvent) => {
@@ -132,6 +142,8 @@ function Card({ children, title, className = "", showCharacter = false }: { chil
         <div
             ref={cardRef}
             onMouseMove={handleMouseMove}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             className={`relative bg-[#09090b] border-industrial rounded-none p-10 overflow-visible group/card transition-transform duration-300 hover:scale-[1.01] ${className}`}
         >
             {/* Mouse reactive grid overlay */}
@@ -147,7 +159,19 @@ function Card({ children, title, className = "", showCharacter = false }: { chil
             />
             <div className="card-grid-glow opacity-30" />
 
-            {showCharacter && <CharacterPeeker mousePos={mousePos} />}
+            {/* Depth Container for Character - Part 1: Background (Outside) */}
+            {showCharacter && (
+                <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-[-1]">
+                    <CharacterPeeker mousePos={mousePos} isHovered={false} />
+                </div>
+            )}
+
+            {/* Depth Container for Character - Part 2: Clipped Foreground (Inside) */}
+            {showCharacter && (
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                    <CharacterPeeker mousePos={mousePos} isHovered={isHovered} />
+                </div>
+            )}
 
             <div className="relative z-10">
                 {title && (
@@ -755,11 +779,17 @@ export default function DealClient({ dealId }: Props) {
                 <div className="pt-20 space-y-20">
                     <Card title="PROTOCOL FEES">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-16">
-                            <p className="text-zinc-500 text-2xl font-bold max-w-xl">Fully decentralized OTC trading with transparent fee structures.</p>
-                            <div className="flex flex-wrap justify-center gap-8">
-                                <div className="px-10 py-6 bg-white text-black font-black uppercase tracking-widest text-3xl border-b-[10px] border-zinc-300">0.5% STD</div>
-                                <div className="px-10 py-6 border-4 border-white text-white font-black uppercase tracking-widest text-3xl bg-towns-hover cursor-help">
-                                    $ <span className="text-brand-gradient">TOWNS</span> 0.1%
+                            <p className="text-zinc-500 text-2xl font-bold max-w-xl">Fully decentralized OTC trading. Only 0.1% commission when paying with TOWNS.</p>
+                            <div className="flex items-center gap-6">
+                                <div className="flex flex-col items-end">
+                                    <span className="text-green-500 font-black text-xs tracking-tighter animate-pulse mb-1">ACTIVE SYSTEM</span>
+                                    <div className="relative group/toggle flex items-center bg-zinc-900 border-2 border-zinc-800 p-1 rounded-full w-24 h-12 transition-all hover:border-green-500/50 hover:shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                                        <div className="absolute right-1 w-10 h-10 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e] transition-transform" />
+                                        <span className="ml-3 text-[10px] font-black text-green-500/80">ON</span>
+                                    </div>
+                                </div>
+                                <div className="px-10 py-6 border-4 border-white/10 text-white font-black uppercase tracking-widest text-3xl transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/5 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group">
+                                    $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all">TOWNS</span> 0.1%
                                 </div>
                             </div>
                         </div>

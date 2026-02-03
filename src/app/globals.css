@@ -137,13 +137,15 @@
   45%,
   55%,
   100% {
-    transform: scaleY(1);
-    opacity: 0.9;
+    transform: scaleY(1) scaleX(1);
+    filter: brightness(1.5) drop-shadow(0 0 10px #BF40BF);
+    opacity: 1;
   }
 
   50% {
-    transform: scaleY(0.1);
-    opacity: 0.3;
+    transform: scaleY(0.1) scaleX(1.2);
+    filter: brightness(0.5);
+    opacity: 0.5;
   }
 }
 
