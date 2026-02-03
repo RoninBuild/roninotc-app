@@ -6,7 +6,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient, useSwitchChain } from 'wagmi'
 import { parseUnits, keccak256, toHex, zeroAddress } from 'viem'
 import { getDeal, updateDealStatus } from '@/lib/api'
-import { FACTORY_ADDRESS, USDC_ADDRESS, factoryAbi, escrowAbi, erc20Abi, parseUsdcAmount } from '@/lib/contracts'
+import { FACTORY_ADDRESS, USDC_ADDRESS, ARBITRATOR_ADDRESS, factoryAbi, escrowAbi, erc20Abi, parseUsdcAmount } from '@/lib/contracts'
 import type { Deal } from '@/lib/types'
 import Link from 'next/link'
 
@@ -360,7 +360,7 @@ export default function DealClient({ dealId }: Props) {
             address: FACTORY_ADDRESS,
             abi: factoryAbi,
             functionName: 'createEscrow',
-            args: [deal.seller_address as `0x${string}`, USDC_ADDRESS, amount, BigInt(deal.deadline), zeroAddress, memoHash],
+            args: [deal.seller_address as `0x${string}`, USDC_ADDRESS, amount, BigInt(deal.deadline), ARBITRATOR_ADDRESS, memoHash],
         }), 'Creating...')
     }
 
