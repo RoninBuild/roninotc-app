@@ -693,8 +693,8 @@ export default function DealClient({ dealId }: Props) {
                                                 onClick={() => handleTx(() => resolveDispute({
                                                     address: deal.escrow_address as `0x${string}`,
                                                     abi: escrowAbi,
-                                                    functionName: 'resolveDispute',
-                                                    args: [deal.buyer_address as `0x${string}`]
+                                                    functionName: 'resolve',
+                                                    args: [false]
                                                 }), 'Ruling for Buyer...')}
                                                 className="py-6 border-4 border-white hover:bg-white hover:text-black font-black uppercase tracking-widest transition-all">
                                                 WINNER: BUYER
@@ -703,8 +703,8 @@ export default function DealClient({ dealId }: Props) {
                                                 onClick={() => handleTx(() => resolveDispute({
                                                     address: deal.escrow_address as `0x${string}`,
                                                     abi: escrowAbi,
-                                                    functionName: 'resolveDispute',
-                                                    args: [deal.seller_address as `0x${string}`]
+                                                    functionName: 'resolve',
+                                                    args: [true]
                                                 }), 'Ruling for Seller...')}
                                                 className="py-6 bg-white text-black hover:bg-zinc-200 font-black uppercase tracking-widest transition-all">
                                                 WINNER: SELLER
