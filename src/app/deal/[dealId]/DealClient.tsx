@@ -105,11 +105,11 @@ function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: nu
             `}</style>
 
             <div className="ronin-breathe relative w-full h-full flex items-center justify-center">
-                {/* White Aura Glow Behind */}
-                <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[220px] bg-white opacity-10 blur-[90px] rounded-full z-[-1]" />
+                {/* White Aura Glow Behind - Dimmed */}
+                <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[220px] bg-white opacity-[0.03] blur-[100px] rounded-full z-[-1]" />
 
-                {/* Ronin Background Silhouette - Brightened */}
-                <div className="absolute inset-0 z-0 opacity-100 filter brightness-[1.8] contrast-125">
+                {/* Ronin Background Silhouette - High Contrast & Brighter */}
+                <div className="absolute inset-0 z-0 opacity-100 filter brightness-[2.1] contrast-[1.6]">
                     <img
                         src="/assets/ronin-bg.png"
                         alt="Ronin Background"
@@ -121,15 +121,15 @@ function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: nu
                 <div
                     className="absolute inset-0 z-10"
                     style={{
-                        transform: `translate(${mousePos.x * 0.003}px, ${mousePos.y * 0.003}px)`,
+                        transform: `translate(${mousePos.x * 0.001}px, ${mousePos.y * 0.001}px)`,
                     }}
                 >
-                    {/* Glowing Purple Eyes - Purely purple, no white centers */}
+                    {/* Glowing Purple Eyes - Larger to fully cover white spots */}
                     <div
-                        className="absolute top-[48.2%] left-[46.6%] w-[16px] h-[8px] bg-[#A855F7] shadow-[0_0_20px_#A855F7,0_0_40px_rgba(168,85,247,0.6)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out]"
+                        className="absolute top-[48.2%] left-[45.8%] w-[24px] h-[7px] bg-[#A855F7] shadow-[0_0_15px_#A855F7,0_0_30px_rgba(168,85,247,0.8)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out]"
                     />
                     <div
-                        className="absolute top-[48.2%] left-[53.1%] w-[16px] h-[8px] bg-[#A855F7] shadow-[0_0_20px_#A855F7,0_0_40px_rgba(168,85,247,0.6)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s]"
+                        className="absolute top-[48.2%] left-[52.4%] w-[24px] h-[7px] bg-[#A855F7] shadow-[0_0_15px_#A855F7,0_0_30px_rgba(168,85,247,0.8)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s]"
                     />
                 </div>
             </div>
