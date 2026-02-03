@@ -108,8 +108,8 @@ function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: nu
                 {/* White Aura Glow Behind - Dimmed */}
                 <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[220px] bg-white opacity-[0.03] blur-[100px] rounded-full z-[-1]" />
 
-                {/* Ronin Background Silhouette - High Contrast & Brighter */}
-                <div className="absolute inset-0 z-0 opacity-100 filter brightness-[2.1] contrast-[1.6]">
+                {/* Ronin Background Silhouette - High Contrast & Brighter for sword visibility */}
+                <div className="absolute inset-0 z-0 opacity-100 filter brightness-[2.4] contrast-[1.9]">
                     <img
                         src="/assets/ronin-bg.png"
                         alt="Ronin Background"
@@ -124,9 +124,9 @@ function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: nu
                         transform: `translate(${mousePos.x * 0.001}px, ${mousePos.y * 0.001}px)`,
                     }}
                 >
-                    {/* Glowing Purple Eyes - Larger to fully cover white spots */}
+                    {/* Glowing Purple Eyes - Larger and shifted to fully cover white spots */}
                     <div
-                        className="absolute top-[48.2%] left-[45.8%] w-[24px] h-[7px] bg-[#A855F7] shadow-[0_0_15px_#A855F7,0_0_30px_rgba(168,85,247,0.8)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out]"
+                        className="absolute top-[48.2%] left-[44.4%] w-[32px] h-[7px] bg-[#A855F7] shadow-[0_0_15px_#A855F7,0_0_30px_rgba(168,85,247,0.8)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out]"
                     />
                     <div
                         className="absolute top-[48.2%] left-[52.4%] w-[24px] h-[7px] bg-[#A855F7] shadow-[0_0_15px_#A855F7,0_0_30px_rgba(168,85,247,0.8)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s]"
