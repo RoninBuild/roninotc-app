@@ -93,9 +93,9 @@ function GlobalInteractiveGrid() {
 // Refined Eyes / Peeking Logic (Minimalist, Eyes Only)
 function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: number }, isHovered: boolean }) {
     return (
-        <div className="absolute left-1/2 -top-[280px] -translate-x-1/2 w-[600px] h-[300px] pointer-events-none z-[-2] overflow-visible transition-all duration-700 flex flex-col items-center justify-end">
-            {/* Ronin Background Silhouette */}
-            <div className="absolute inset-0 z-[-1] opacity-40">
+        <div className="absolute left-1/2 -top-[300px] -translate-x-1/2 w-[700px] h-[350px] pointer-events-none z-[-2] overflow-visible transition-all duration-700 flex flex-col items-center justify-end">
+            {/* Ronin Background Silhouette - Brightened */}
+            <div className="absolute inset-0 z-[-1] opacity-100 filter brightness-[1.8] drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
                 <img
                     src="/assets/ronin-bg.png"
                     alt="Ronin Background"
@@ -107,15 +107,15 @@ function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: nu
             <div
                 className="relative w-full h-full"
                 style={{
-                    transform: `translate(${mousePos.x * 0.003}px, ${mousePos.y * 0.003}px)`,
+                    transform: `translate(${mousePos.x * 0.002}px, ${mousePos.y * 0.002}px)`,
                 }}
             >
                 {/* Glowing Purple Eyes - Positioned precisely on the silhouette eyes */}
                 <div
-                    className="absolute top-[48.5%] left-[46.3%] w-[10px] h-[4px] bg-[#A855F7] rounded-full blur-[1px] animate-[blink_4s_infinite_ease-in-out] shadow-[0_0_15px_#A855F7]"
+                    className="absolute top-[48.2%] left-[46.6%] w-[14px] h-[6px] bg-[#A855F7] rounded-full blur-[1px] animate-[blink_4s_infinite_ease-in-out] shadow-[0_0_20px_#A855F7]"
                 />
                 <div
-                    className="absolute top-[48.5%] left-[53.3%] w-[10px] h-[4px] bg-[#A855F7] rounded-full blur-[1px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s] shadow-[0_0_15px_#A855F7]"
+                    className="absolute top-[48.2%] left-[53.1%] w-[14px] h-[6px] bg-[#A855F7] rounded-full blur-[1px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s] shadow-[0_0_20px_#A855F7]"
                 />
             </div>
         </div>
