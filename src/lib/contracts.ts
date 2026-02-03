@@ -98,8 +98,8 @@ export const escrowAbi = [
     },
     {
         type: 'function',
-        name: 'resolveDispute',
-        inputs: [{ name: '_winner', type: 'address' }],
+        name: 'resolve',
+        inputs: [{ name: '_payToSeller', type: 'bool' }],
         outputs: [],
         stateMutability: 'nonpayable',
     },
