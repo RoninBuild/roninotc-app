@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient, useSwitchChain } from 'wagmi'
 import { parseUnits, keccak256, toHex, zeroAddress } from 'viem'
 import { getDeal, updateDealStatus } from '@/lib/api'
 import { FACTORY_ADDRESS, USDC_ADDRESS, factoryAbi, escrowAbi, erc20Abi, parseUsdcAmount } from '@/lib/contracts'
@@ -334,7 +334,25 @@ export default function DealClient({ dealId }: Props) {
         }
     }
 
+    // Network Check
+    const { switchChain } = useSwitchChain()
+    const { chainId } = useAccount()
+    const isWrongNetwork = chainId !== 8453 && !!address
+
+    const handleSwitchNetwork = () => {
+        switchChain({ chainId: 8453 })
+    }
+
+    const checkNetwork = () => {
+        if (isWrongNetwork) {
+            handleSwitchNetwork()
+            return false
+        }
+        return true
+    }
+
     const handleCreateEscrow = async () => {
+        if (!checkNetwork()) return
         if (!deal || !address) return
         const amount = parseUsdcAmount(deal.amount)
         const memoHash = keccak256(toHex(deal.deal_id))
@@ -347,6 +365,7 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleApproveUsdc = async () => {
+        if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         const amount = parseUsdcAmount(deal.amount)
         handleTx(() => approveUsdc({
@@ -358,6 +377,7 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleFundEscrow = async () => {
+        if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         handleTx(() => fundEscrow({
             address: deal.escrow_address as `0x${string}`,
@@ -367,6 +387,7 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleReleaseFunds = async () => {
+        if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         handleTx(() => releaseEscrow({
             address: deal.escrow_address as `0x${string}`,
@@ -376,6 +397,7 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleRefund = async () => {
+        if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         handleTx(() => refundEscrow({
             address: deal.escrow_address as `0x${string}`,
@@ -385,6 +407,7 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleDispute = async () => {
+        if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         handleTx(() => openDispute({
             address: deal.escrow_address as `0x${string}`,
@@ -547,7 +570,9 @@ export default function DealClient({ dealId }: Props) {
                                 </div>
                                 <div className="space-y-3">
                                     <label className="text-sm text-zinc-500 uppercase tracking-[0.3em] font-black">NETWORK</label>
-                                    <p className="text-4xl font-black tracking-tighter text-white uppercase">BASE</p>
+                                    <p className={`text-4xl font-black tracking-tighter uppercase ${isWrongNetwork ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+                                        {isWrongNetwork ? 'WRONG NET' : 'BASE'}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -572,6 +597,10 @@ export default function DealClient({ dealId }: Props) {
                                         <p className="text-sm text-zinc-500 font-black uppercase tracking-[0.5em]">AUTHORIZATION REQUIRED</p>
                                         <ConnectButton />
                                     </div>
+                                ) : isWrongNetwork ? (
+                                    <button onClick={handleSwitchNetwork} className="w-full bg-red-600 text-white font-black py-10 rounded-none text-4xl uppercase tracking-tighter hover:bg-red-500 transition-all border-b-[16px] border-red-800 active:translate-y-2 active:border-b-[8px]">
+                                        SWITCH TO BASE
+                                    </button>
                                 ) : isBuyer ? (
                                     <button onClick={handleCreateEscrow} disabled={isAnyTxPending} className="w-full bg-white text-black font-black py-10 rounded-none text-4xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px]">
                                         {isAnyTxPending ? 'INITIALIZING...' : 'DEPLOY ESCROW CONTRACT'}
@@ -591,7 +620,11 @@ export default function DealClient({ dealId }: Props) {
                                         Escrow deployed. Deposit <span className="text-blue-500">{deal.amount} {deal.token}</span> to fund.
                                     </p>
                                 </div>
-                                {isBuyer ? (
+                                {isWrongNetwork ? (
+                                    <button onClick={handleSwitchNetwork} className="w-full bg-red-600 text-white font-black py-10 rounded-none text-4xl uppercase tracking-tighter hover:bg-red-500 transition-all border-b-[16px] border-red-800 active:translate-y-2 active:border-b-[8px]">
+                                        SWITCH TO BASE
+                                    </button>
+                                ) : isBuyer ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <button onClick={handleApproveUsdc} disabled={isAnyTxPending || !needsApproval} className={`py-8 px-10 border-4 font-black text-2xl uppercase tracking-widest transition-all ${!needsApproval ? 'border-zinc-800 text-zinc-600 bg-zinc-900 pointer-events-none' : 'border-white text-white hover:bg-white/10'}`}>
                                             {!needsApproval ? 'APPROVED' : '1. ALLOW USDC'}
@@ -613,7 +646,11 @@ export default function DealClient({ dealId }: Props) {
                                 <div className="p-10 border-l-8 border-green-500 bg-green-500/5 text-center">
                                     <p className="text-green-500 text-3xl font-black uppercase tracking-widest">🛡️ SECURED IN PROTOCOL</p>
                                 </div>
-                                {isBuyer ? (
+                                {isWrongNetwork ? (
+                                    <button onClick={handleSwitchNetwork} className="w-full bg-red-600 text-white font-black py-10 rounded-none text-4xl uppercase tracking-tighter hover:bg-red-500 transition-all border-b-[16px] border-red-800 active:translate-y-2 active:border-b-[8px]">
+                                        SWITCH TO BASE
+                                    </button>
+                                ) : isBuyer ? (
                                     <div className="space-y-6">
                                         <button onClick={handleReleaseFunds} disabled={isAnyTxPending} className="w-full bg-white text-black font-black py-10 rounded-none text-5xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px]">
                                             {isReleasing ? 'RELEASING...' : 'RELEASE TO SELLER'}
