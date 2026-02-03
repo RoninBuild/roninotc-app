@@ -1,6 +1,6 @@
 import { parseUnits } from 'viem'
 
-export const FACTORY_ADDRESS = '0x3E4c189Aca6600d33E7a100bf9dB4bB44827299B' as const
+export const FACTORY_ADDRESS = '0x47bB0Aa73f84a13a7dCF13f8130EC9193C8a33Da' as const
 export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as const
 export const ARBITRATOR_ADDRESS = '0xdA5043637A9505A9daA85c86fEE7D8D463307698' as const
 
