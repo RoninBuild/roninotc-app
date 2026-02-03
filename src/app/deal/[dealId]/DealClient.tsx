@@ -90,35 +90,32 @@ function GlobalInteractiveGrid() {
     )
 }
 
+// Eyes and peeking logic update
 function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: number }, isHovered: boolean }) {
     return (
-        <div className="absolute left-1/2 -top-56 -translate-x-1/2 w-[450px] h-[450px] pointer-events-none z-[-1] overflow-visible transition-all duration-700">
+        <div className="absolute left-1/2 -top-40 -translate-x-1/2 w-[450px] h-[450px] pointer-events-none z-[-1] overflow-visible transition-all duration-700">
             {/* Tighter Semi-circular shadow / Glow behind */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.6)_0%,transparent_60%)] opacity-60" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.8)_0%,transparent_70%)] opacity-80" />
 
             <div
                 className="relative w-full h-full animate-[zoom-breathing_12s_infinite_ease-in-out]"
                 style={{
-                    transform: `translate(${mousePos.x * 0.01}px, ${mousePos.y * 0.01}px)`,
-                    maskImage: 'radial-gradient(circle, black 25%, transparent 55%)',
-                    WebkitMaskImage: 'radial-gradient(circle, black 25%, transparent 55%)'
+                    transform: `translate(${mousePos.x * 0.005}px, ${mousePos.y * 0.005}px)`,
                 }}
             >
-                {/* Image with extreme transparency and grayscale look */}
+                {/* Image - Darkened significantly, barely visible silhouette */}
                 <img
                     src="/assets/ronin.png"
                     alt="Ronin"
-                    className={`w-full h-full object-contain filter contrast-125 mix-blend-screen transition-all duration-700 ${isHovered ? 'brightness-110 saturate-[0.1] opacity-30 px-4' : 'saturate-0 brightness-75 opacity-10'}`}
+                    className="w-full h-full object-contain filter brightness-0 opacity-40 transition-all duration-700"
                 />
 
-                {/* Glowing Purple Eyes - More subtle but distinct */}
+                {/* Glowing White Eyes - Blinking */}
                 <div
-                    className="absolute top-[44%] left-[43%] w-2 h-1.5 bg-[#BF40BF] rounded-full blur-[1px] animate-[character-eye_6s_infinite] shadow-[0_0_10px_#BF40BF,0_0_20px_#A855F7]"
-                    style={{ filter: 'drop-shadow(0 0 3px #BF40BF)' }}
+                    className="absolute top-[44%] left-[43%] w-1.5 h-1.5 bg-white rounded-full blur-[0.5px] animate-[blink_4s_infinite_ease-in-out] shadow-[0_0_15px_white]"
                 />
                 <div
-                    className="absolute top-[44%] left-[54%] w-2 h-1.5 bg-[#BF40BF] rounded-full blur-[1px] animate-[character-eye_6s_infinite] [animation-delay:0.3s] shadow-[0_0_10px_#BF40BF,0_0_20px_#A855F7]"
-                    style={{ filter: 'drop-shadow(0 0 3px #BF40BF)' }}
+                    className="absolute top-[44%] left-[54%] w-1.5 h-1.5 bg-white rounded-full blur-[0.5px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s] shadow-[0_0_15px_white]"
                 />
             </div>
         </div>
@@ -145,7 +142,7 @@ function Card({ children, title, className = "", showCharacter = false }: { chil
             onMouseMove={handleMouseMove}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`relative bg-[#09090b] border-industrial rounded-none p-10 overflow-visible group/card transition-transform duration-300 hover:scale-[1.01] ${className}`}
+            className={`relative bg-[#09090b] border-industrial rounded-none p-10 overflow-visible group/card transition-transform duration-300 hover:scale-[1.005] ${className}`}
         >
             {/* Mouse reactive grid overlay */}
             <div
@@ -160,19 +157,14 @@ function Card({ children, title, className = "", showCharacter = false }: { chil
             />
             <div className="card-grid-glow opacity-30" />
 
-            {/* Depth Container for Character - Part 1: Background (Outside) */}
+            {/* Depth Container for Character - Only visible OUTSIDE the card (Peeking from top) */}
             {showCharacter && (
                 <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-[-1]">
-                    <CharacterPeeker mousePos={mousePos} isHovered={false} />
-                </div>
-            )}
-
-            {/* Depth Container for Character - Part 2: Clipped Foreground (Inside) */}
-            {showCharacter && (
-                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                     <CharacterPeeker mousePos={mousePos} isHovered={isHovered} />
                 </div>
             )}
+
+            {/* IN-CARD character visibility removed as requested */}
 
             <div className="relative z-10">
                 {title && (
