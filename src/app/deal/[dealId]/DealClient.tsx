@@ -93,30 +93,45 @@ function GlobalInteractiveGrid() {
 // Refined Eyes / Peeking Logic (Minimalist, Eyes Only)
 function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: number }, isHovered: boolean }) {
     return (
-        <div className="absolute left-1/2 -top-[300px] -translate-x-1/2 w-[700px] h-[350px] pointer-events-none z-[-2] overflow-visible transition-all duration-700 flex flex-col items-center justify-end">
-            {/* Ronin Background Silhouette - Brightened */}
-            <div className="absolute inset-0 z-[-1] opacity-100 filter brightness-[1.8] drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                <img
-                    src="/assets/ronin-bg.png"
-                    alt="Ronin Background"
-                    className="w-full h-full object-contain"
-                />
-            </div>
+        <div className="absolute left-1/2 -top-[320px] -translate-x-1/2 w-[800px] h-[400px] pointer-events-none z-[-2] overflow-visible transition-all duration-700 flex flex-col items-center justify-end">
+            <style jsx>{`
+                @keyframes breathe {
+                    0%, 100% { transform: translateY(0) scale(1); }
+                    50% { transform: translateY(-10px) scale(1.01); }
+                }
+                .ronin-breathe {
+                    animation: breathe 8s infinite ease-in-out;
+                }
+            `}</style>
 
-            {/* Eyes Container - Aligned to the Ronin Silhouette */}
-            <div
-                className="relative w-full h-full"
-                style={{
-                    transform: `translate(${mousePos.x * 0.002}px, ${mousePos.y * 0.002}px)`,
-                }}
-            >
-                {/* Glowing Purple Eyes - Positioned precisely on the silhouette eyes */}
+            <div className="ronin-breathe relative w-full h-full flex items-center justify-center">
+                {/* White Aura Glow Behind */}
+                <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[220px] bg-white opacity-10 blur-[90px] rounded-full z-[-1]" />
+
+                {/* Ronin Background Silhouette - Brightened */}
+                <div className="absolute inset-0 z-0 opacity-100 filter brightness-[1.8] contrast-125">
+                    <img
+                        src="/assets/ronin-bg.png"
+                        alt="Ronin Background"
+                        className="w-full h-full object-contain"
+                    />
+                </div>
+
+                {/* Eyes Container - Aligned to the Ronin Silhouette */}
                 <div
-                    className="absolute top-[48.2%] left-[46.6%] w-[14px] h-[6px] bg-[#A855F7] rounded-full blur-[1px] animate-[blink_4s_infinite_ease-in-out] shadow-[0_0_20px_#A855F7]"
-                />
-                <div
-                    className="absolute top-[48.2%] left-[53.1%] w-[14px] h-[6px] bg-[#A855F7] rounded-full blur-[1px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s] shadow-[0_0_20px_#A855F7]"
-                />
+                    className="absolute inset-0 z-10"
+                    style={{
+                        transform: `translate(${mousePos.x * 0.003}px, ${mousePos.y * 0.003}px)`,
+                    }}
+                >
+                    {/* Glowing Purple Eyes - Purely purple, no white centers */}
+                    <div
+                        className="absolute top-[48.2%] left-[46.6%] w-[16px] h-[8px] bg-[#A855F7] shadow-[0_0_20px_#A855F7,0_0_40px_rgba(168,85,247,0.6)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out]"
+                    />
+                    <div
+                        className="absolute top-[48.2%] left-[53.1%] w-[16px] h-[8px] bg-[#A855F7] shadow-[0_0_20px_#A855F7,0_0_40px_rgba(168,85,247,0.6)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s]"
+                    />
+                </div>
             </div>
         </div>
     )
