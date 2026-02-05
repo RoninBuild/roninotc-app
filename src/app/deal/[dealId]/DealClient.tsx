@@ -627,7 +627,7 @@ export default function DealClient({ dealId }: Props) {
             <main className="relative z-10 max-w-6xl mx-auto px-10 py-20 space-y-20 animate-[fadeIn_0.5s_ease-out] scale-down-pro">
 
                 {/* Transaction Status Banner */}
-                {isAnyTxPending && (
+                {(isAnyTxPending || !!txStatus) && (
                     <div className="fixed top-32 right-10 z-50 bg-white text-black px-10 py-6 border-b-8 border-zinc-300 font-black uppercase tracking-tighter text-2xl flex items-center gap-6 shadow-2xl animate-[slideUp_0.3s_ease-out]">
                         <div className="w-6 h-6 border-4 border-black/20 border-t-black rounded-full animate-spin" />
                         <span>{txStatus || 'Processing...'}</span>

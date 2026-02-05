@@ -2,6 +2,7 @@
 
 import { useTowns } from '@/context/TownsContext'
 import { useState } from 'react'
+import { config } from '@/lib/config'
 
 export type TransactionAction = 'create' | 'approve' | 'fund' | 'release' | 'dispute' | 'resolve'
 
@@ -33,7 +34,8 @@ export function useTownsTransaction() {
         setError(null)
 
         try {
-            const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://escrowronin-bot2v.onrender.com'
+            const botUrl = config.botApiUrl
+            console.log(`[TownsTx] Calling bot at: ${botUrl}/api/request-transaction`)
 
             const controller = new AbortController()
             const id = setTimeout(() => controller.abort(), 10000)
@@ -51,6 +53,7 @@ export function useTownsTransaction() {
                 signal: controller.signal
             })
 
+            console.log(`[TownsTx] Bot response status: ${response.status} ${response.statusText}`)
             clearTimeout(id)
 
             const data = await response.json()
