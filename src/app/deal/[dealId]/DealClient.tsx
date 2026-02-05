@@ -8,6 +8,8 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadCont
 import { parseUnits, keccak256, toHex, zeroAddress } from 'viem'
 import { getDeal, updateDealStatus } from '@/lib/api'
 import { FACTORY_ADDRESS, USDC_ADDRESS, ARBITRATOR_ADDRESS, factoryAbi, escrowAbi, erc20Abi, parseUsdcAmount } from '@/lib/contracts'
+import { useTowns } from '@/context/TownsContext'
+import { useTownsTransaction } from '@/hooks/useTownsTransaction'
 import type { Deal } from '@/lib/types'
 import Link from 'next/link'
 
@@ -220,6 +222,10 @@ export default function DealClient({ dealId }: Props) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [txStatus, setTxStatus] = useState<string | null>(null)
+
+    // Towns Integration
+    const { isTowns, channelId } = useTowns()
+    const { requestTransaction, isRequesting: isTownsTxPending } = useTownsTransaction()
 
     // On-chain state
     const [onChainEscrow, setOnChainEscrow] = useState<`0x${string}` | null>(null)
@@ -434,6 +440,20 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleCreateEscrow = async () => {
+        if (!deal) return
+        if (isTowns && channelId) {
+            try {
+                setTxStatus('Requesting...')
+                await requestTransaction(deal.deal_id, 'create', channelId)
+                setTxStatus('Request Sent! Check Chat')
+                setTimeout(() => setTxStatus(null), 5000)
+                return
+            } catch (e) {
+                setTxStatus('Failed')
+                setTimeout(() => setTxStatus(null), 3000)
+                return
+            }
+        }
         if (!checkNetwork()) return
         if (!deal || !address) return
         const amount = parseUsdcAmount(deal.amount)
@@ -447,6 +467,19 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleApproveUsdc = async () => {
+        if (isTowns && channelId && deal?.deal_id) {
+            try {
+                setTxStatus('Requesting...')
+                await requestTransaction(deal.deal_id, 'approve', channelId)
+                setTxStatus('Request Sent! Check Chat')
+                setTimeout(() => setTxStatus(null), 5000)
+                return
+            } catch (e) {
+                setTxStatus('Failed')
+                setTimeout(() => setTxStatus(null), 3000)
+                return
+            }
+        }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         const amount = parseUsdcAmount(deal.amount)
@@ -459,6 +492,19 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleFundEscrow = async () => {
+        if (isTowns && channelId && deal?.deal_id) {
+            try {
+                setTxStatus('Requesting...')
+                await requestTransaction(deal.deal_id, 'fund', channelId)
+                setTxStatus('Request Sent! Check Chat')
+                setTimeout(() => setTxStatus(null), 5000)
+                return
+            } catch (e) {
+                setTxStatus('Failed')
+                setTimeout(() => setTxStatus(null), 3000)
+                return
+            }
+        }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         handleTx(() => fundEscrow({
@@ -469,6 +515,19 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleReleaseFunds = async () => {
+        if (isTowns && channelId && deal?.deal_id) {
+            try {
+                setTxStatus('Requesting...')
+                await requestTransaction(deal.deal_id, 'release', channelId)
+                setTxStatus('Request Sent! Check Chat')
+                setTimeout(() => setTxStatus(null), 5000)
+                return
+            } catch (e) {
+                setTxStatus('Failed')
+                setTimeout(() => setTxStatus(null), 3000)
+                return
+            }
+        }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         handleTx(() => releaseEscrow({
@@ -489,6 +548,19 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleDispute = async () => {
+        if (isTowns && channelId && deal?.deal_id) {
+            try {
+                setTxStatus('Requesting...')
+                await requestTransaction(deal.deal_id, 'dispute', channelId)
+                setTxStatus('Request Sent! Check Chat')
+                setTimeout(() => setTxStatus(null), 5000)
+                return
+            } catch (e) {
+                setTxStatus('Failed')
+                setTimeout(() => setTxStatus(null), 3000)
+                return
+            }
+        }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         handleTx(() => openDispute({
@@ -499,7 +571,7 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const isAnyTxPending = isCreating || isApproving || isFunding || isReleasing || isRefunding ||
-        isCreateConfirming || isApproveConfirming || isFundConfirming || isReleaseConfirming || isRefundConfirming
+        isCreateConfirming || isApproveConfirming || isFundConfirming || isReleaseConfirming || isRefundConfirming || isTownsTxPending
 
     // Use BigInt(0) if allowance is loading/undefined to force approval check
     const currentAllowance = allowance !== undefined ? allowance : BigInt(0)
@@ -591,44 +663,68 @@ export default function DealClient({ dealId }: Props) {
                         <div className="space-y-12">
                             <div className="space-y-4">
                                 <label className="text-sm text-zinc-500 uppercase tracking-[0.3em] font-black ml-1">SELLER</label>
-                                <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
-                                    {deal.seller_address}
-                                    <button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(deal.seller_address);
-                                            setTxStatus('ADDRESS COPIED');
-                                            setTimeout(() => setTxStatus(null), 2000);
-                                        }}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover/addr:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-white"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                        </svg>
-                                    </button>
-                                    {isSeller && (
-                                        <span className="absolute -top-4 -right-4 px-3 py-1 bg-white text-black text-xs font-black uppercase shadow-xl transform rotate-3">YOU</span>
+                                <div className="flex flex-col gap-3">
+                                    {deal.seller_display_name && (
+                                        <div className="flex items-center gap-4 mb-2">
+                                            {deal.seller_pfp_url ? (
+                                                <img src={deal.seller_pfp_url} className="w-12 h-12 rounded-full border-4 border-white/20" alt="Seller" />
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-full bg-zinc-800 border-4 border-white/20 flex items-center justify-center font-black text-zinc-500">S</div>
+                                            )}
+                                            <span className="text-3xl font-black text-white uppercase tracking-tighter">{deal.seller_display_name}</span>
+                                        </div>
                                     )}
+                                    <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
+                                        {deal.seller_address}
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(deal.seller_address);
+                                                setTxStatus('ADDRESS COPIED');
+                                                setTimeout(() => setTxStatus(null), 2000);
+                                            }}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover/addr:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-white"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                            </svg>
+                                        </button>
+                                        {isSeller && (
+                                            <span className="absolute -top-4 -right-4 px-3 py-1 bg-white text-black text-xs font-black uppercase shadow-xl transform rotate-3">YOU</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                             <div className="space-y-4">
                                 <label className="text-sm text-zinc-500 uppercase tracking-[0.3em] font-black ml-1">BUYER</label>
-                                <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
-                                    {deal.buyer_address}
-                                    <button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(deal.buyer_address);
-                                            setTxStatus('ADDRESS COPIED');
-                                            setTimeout(() => setTxStatus(null), 2000);
-                                        }}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover/addr:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-white"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                        </svg>
-                                    </button>
-                                    {isBuyer && (
-                                        <span className="absolute -top-4 -right-4 px-3 py-1 bg-white text-black text-xs font-black uppercase shadow-xl transform -rotate-3">YOU</span>
+                                <div className="flex flex-col gap-3">
+                                    {deal.buyer_display_name && (
+                                        <div className="flex items-center gap-4 mb-2">
+                                            {deal.buyer_pfp_url ? (
+                                                <img src={deal.buyer_pfp_url} className="w-12 h-12 rounded-full border-4 border-white/20" alt="Buyer" />
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-full bg-zinc-800 border-4 border-white/20 flex items-center justify-center font-black text-zinc-500">B</div>
+                                            )}
+                                            <span className="text-3xl font-black text-white uppercase tracking-tighter">{deal.buyer_display_name}</span>
+                                        </div>
                                     )}
+                                    <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
+                                        {deal.buyer_address}
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(deal.buyer_address);
+                                                setTxStatus('ADDRESS COPIED');
+                                                setTimeout(() => setTxStatus(null), 2000);
+                                            }}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover/addr:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-white"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                            </svg>
+                                        </button>
+                                        {isBuyer && (
+                                            <span className="absolute -top-4 -right-4 px-3 py-1 bg-white text-black text-xs font-black uppercase shadow-xl transform -rotate-3">YOU</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

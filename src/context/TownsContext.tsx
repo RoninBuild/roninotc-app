@@ -10,6 +10,7 @@ interface TownsContextType {
     identityAddress: string | null // The Identity ID (from Context)
     userDisplayName: string | null
     pfpUrl: string | null
+    channelId: string | null
     isLoading: boolean
     rawContext: ExtendedMiniAppContext | null // For debugging
 }
@@ -20,6 +21,7 @@ const TownsContext = createContext<TownsContextType>({
     identityAddress: null,
     userDisplayName: null,
     pfpUrl: null,
+    channelId: null,
     isLoading: true,
     rawContext: null,
 })
@@ -37,6 +39,7 @@ interface ExtendedMiniAppContext {
     client?: {
         clientName?: string
     }
+    channelId?: string
     towns?: {
         user?: {
             address?: string
@@ -52,6 +55,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     const [identityAddress, setIdentityAddress] = useState<string | null>(null)
     const [userDisplayName, setUserDisplayName] = useState<string | null>(null)
     const [pfpUrl, setPfpUrl] = useState<string | null>(null)
+    const [channelId, setChannelId] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [rawContext, setRawContext] = useState<ExtendedMiniAppContext | null>(null)
     const initialized = useRef(false)
@@ -87,6 +91,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
                     setIdentityAddress(context.towns.user.address)
                     setUserDisplayName(context.user?.displayName || context.towns.user.username || 'Towns User')
                     setPfpUrl(context.user?.pfpUrl || null)
+                    setChannelId(context.channelId || null)
 
                     // Get Wallet Address from SDK Provider (The Towns "Smart Wallet")
                     try {
@@ -165,7 +170,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     }, [isLoading, isTowns, townsAddress, address, connector, isConnected, connectors, connectAsync, disconnectAsync])
 
     return (
-        <TownsContext.Provider value={{ isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, isLoading, rawContext }}>
+        <TownsContext.Provider value={{ isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, channelId, isLoading, rawContext }}>
             {children}
         </TownsContext.Provider>
     )

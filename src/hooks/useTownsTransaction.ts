@@ -3,7 +3,7 @@
 import { useTowns } from '@/context/TownsContext'
 import { useState } from 'react'
 
-export type TransactionAction = 'approve' | 'fund' | 'release' | 'dispute' | 'resolve'
+export type TransactionAction = 'create' | 'approve' | 'fund' | 'release' | 'dispute' | 'resolve'
 
 export function useTownsTransaction() {
     const { isTowns, townsAddress } = useTowns()

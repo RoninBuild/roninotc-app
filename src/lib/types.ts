@@ -4,7 +4,15 @@ export interface Deal {
   id?: number
   deal_id: string
   seller_address: string
+  seller_user_id?: string
+  seller_username?: string
+  seller_display_name?: string
+  seller_pfp_url?: string
   buyer_address: string
+  buyer_user_id?: string
+  buyer_username?: string
+  buyer_display_name?: string
+  buyer_pfp_url?: string
   amount: string
   token: string
   description: string
