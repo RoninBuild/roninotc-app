@@ -250,8 +250,13 @@ export default function DealClient({ dealId }: Props) {
     const { isLoading: isDisputeConfirming, isSuccess: isDisputeSuccess } = useWaitForTransactionReceipt({ hash: disputeHash })
     const { isLoading: isResolveConfirming, isSuccess: isResolveSuccess } = useWaitForTransactionReceipt({ hash: resolveHash })
 
-    const isSeller = address?.toLowerCase() === deal?.seller_address?.toLowerCase()
-    const isBuyer = address?.toLowerCase() === deal?.buyer_address?.toLowerCase()
+    // Use identityAddress from TownsContext as a fallback/secondary check if available
+    const { identityAddress } = useTowns()
+
+    const isSeller = (address?.toLowerCase() === deal?.seller_address?.toLowerCase()) ||
+        (identityAddress?.toLowerCase() === deal?.seller_user_id?.toLowerCase())
+    const isBuyer = (address?.toLowerCase() === deal?.buyer_address?.toLowerCase()) ||
+        (identityAddress?.toLowerCase() === deal?.buyer_user_id?.toLowerCase())
 
     // Blockchain Reads (Basic allowance only, Escrow status moved to publicClient for reliability)
     const { data: allowance, refetch: refetchAllowance } = useReadContract({
@@ -687,7 +692,13 @@ export default function DealClient({ dealId }: Props) {
                                         </span>
                                     </div>
                                     <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
-                                        {deal.seller_address}
+                                        {/* Display Smart Account (F17) with a label if it's different from the User ID */}
+                                        <div className="flex flex-col gap-1">
+                                            <span>{deal.seller_address}</span>
+                                            {deal.seller_user_id && deal.seller_user_id.toLowerCase() !== deal.seller_address.toLowerCase() && (
+                                                <span className="text-zinc-500 text-sm uppercase font-black">Linked to Towns ID: {deal.seller_user_id.slice(0, 6)}...{deal.seller_user_id.slice(-4)}</span>
+                                            )}
+                                        </div>
                                         <button
                                             onClick={() => {
                                                 navigator.clipboard.writeText(deal.seller_address);
@@ -722,7 +733,13 @@ export default function DealClient({ dealId }: Props) {
                                         </span>
                                     </div>
                                     <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
-                                        {deal.buyer_address}
+                                        {/* Display Smart Account (F17) with a label if it's different from the User ID */}
+                                        <div className="flex flex-col gap-1">
+                                            <span>{deal.buyer_address}</span>
+                                            {deal.buyer_user_id && deal.buyer_user_id.toLowerCase() !== deal.buyer_address.toLowerCase() && (
+                                                <span className="text-zinc-500 text-sm uppercase font-black">Linked to Towns ID: {deal.buyer_user_id.slice(0, 6)}...{deal.buyer_user_id.slice(-4)}</span>
+                                            )}
+                                        </div>
                                         <button
                                             onClick={() => {
                                                 navigator.clipboard.writeText(deal.buyer_address);
