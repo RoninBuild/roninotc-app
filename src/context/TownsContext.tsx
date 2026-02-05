@@ -91,9 +91,9 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
                 // 2. Fetch Capabilities
                 let capabilities: string[] = []
                 try {
-                    // @ts-ignore
-                    if (sdk.actions.getCapabilities) {
-                        capabilities = await sdk.actions.getCapabilities()
+                    const actions = sdk.actions as any
+                    if (actions.getCapabilities) {
+                        capabilities = await actions.getCapabilities()
                     }
                 } catch (e) {
                     console.warn('Towns: getCapabilities check failed', e)
