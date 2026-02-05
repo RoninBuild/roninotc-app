@@ -33,7 +33,7 @@ export function useTownsTransaction() {
         setError(null)
 
         try {
-            const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://escrowronin-bot.roninotc.workers.dev'
+            const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://escrowronin-bot2v.onrender.com'
 
             const controller = new AbortController()
             const id = setTimeout(() => controller.abort(), 10000)

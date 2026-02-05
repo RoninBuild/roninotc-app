@@ -178,7 +178,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
 
         const syncProfile = async () => {
             try {
-                const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://escrowronin-bot.roninotc.workers.dev'
+                const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://escrowronin-bot2v.onrender.com'
                 await fetch(`${botUrl}/api/user/sync-profile`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
