@@ -11,6 +11,7 @@ interface TownsContextType {
     userDisplayName: string | null
     pfpUrl: string | null
     isLoading: boolean
+    rawContext: ExtendedMiniAppContext | null // For debugging
 }
 
 const TownsContext = createContext<TownsContextType>({
@@ -20,6 +21,7 @@ const TownsContext = createContext<TownsContextType>({
     userDisplayName: null,
     pfpUrl: null,
     isLoading: true,
+    rawContext: null,
 })
 
 export function useTowns() {
@@ -51,6 +53,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     const [userDisplayName, setUserDisplayName] = useState<string | null>(null)
     const [pfpUrl, setPfpUrl] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [rawContext, setRawContext] = useState<ExtendedMiniAppContext | null>(null)
     const initialized = useRef(false)
 
     const { connectAsync, connectors } = useConnect()
@@ -75,6 +78,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
                 // 3. Fetch Context
                 const context = (await sdk.context) as unknown as ExtendedMiniAppContext
                 console.log('Towns: Full SDK Context:', context)
+                setRawContext(context) // Store for debugging
 
                 // 4. Identify Environment and Fetch REAL Wallet Address from Provider
                 if (context?.towns?.user?.address) {
@@ -161,7 +165,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     }, [isLoading, isTowns, townsAddress, address, connector, isConnected, connectors, connectAsync, disconnectAsync])
 
     return (
-        <TownsContext.Provider value={{ isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, isLoading }}>
+        <TownsContext.Provider value={{ isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, isLoading, rawContext }}>
             {children}
         </TownsContext.Provider>
     )

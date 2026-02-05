@@ -5,7 +5,7 @@ import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit'
 import { useTowns } from '../context/TownsContext'
 
 export function ConnectWallet() {
-    const { isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, isLoading } = useTowns()
+    const { isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, isLoading, rawContext } = useTowns()
     const { address: wagmiAddress, connector } = useAccount()
 
     // If loading SDK, show nothing or skeleton
@@ -45,31 +45,90 @@ export function ConnectWallet() {
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-1" />
                 </div>
 
-                {/* Debug Overlay - Temporary */}
-                <div className="flex flex-col items-end text-[9px] text-zinc-500 bg-black/90 p-2 rounded border border-zinc-800 font-mono space-y-0.5">
-                    <div className="text-zinc-400 uppercase font-bold text-[8px] mb-1 self-start border-b border-zinc-800 w-full">Diagnostics</div>
-                    <div className="flex justify-between w-full gap-4">
-                        <span>Wallet (SDK):</span>
-                        <span className={(townsAddress?.toLowerCase() === wagmiAddress?.toLowerCase()) ? 'text-green-500' : 'text-red-500'}>
-                            {townsAddress?.slice(0, 8)}...
+                {/* Debug Overlay - Comprehensive */}
+                <div className="flex flex-col items-start text-[9px] text-zinc-300 bg-black/95 p-3 rounded border border-zinc-700 font-mono space-y-1 max-w-md">
+                    <div className="text-zinc-400 uppercase font-bold text-[10px] mb-2 border-b border-zinc-700 w-full pb-1">🔍 SDK Context Debug</div>
+
+                    {/* Client Info */}
+                    <div className="w-full">
+                        <span className="text-zinc-500">Client:</span>{' '}
+                        <span className="text-cyan-400">{rawContext?.client?.clientName || 'unknown'}</span>
+                    </div>
+
+                    {/* Towns Detection */}
+                    <div className="w-full">
+                        <span className="text-zinc-500">isTowns:</span>{' '}
+                        <span className={isTowns ? 'text-green-500' : 'text-red-500'}>
+                            {isTowns ? '✓ true' : '✗ false'}
                         </span>
                     </div>
-                    <div className="flex justify-between w-full gap-4">
-                        <span>Ident (Ctx):</span>
-                        <span className="text-zinc-600">
-                            {identityAddress?.slice(0, 8)}...
-                        </span>
+
+                    {/* User Profile */}
+                    <div className="w-full border-t border-zinc-800 pt-1 mt-1">
+                        <div className="text-zinc-500 mb-0.5">User Profile:</div>
+                        <div className="pl-2 space-y-0.5">
+                            <div>
+                                <span className="text-zinc-600">Display:</span>{' '}
+                                <span className="text-purple-400">{userDisplayName || 'null'}</span>
+                            </div>
+                            <div>
+                                <span className="text-zinc-600">PFP:</span>{' '}
+                                <span className="text-purple-400">{pfpUrl ? '✓' : '✗'}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex justify-between w-full gap-4">
-                        <span>Wagmi:</span>
-                        <span className="text-blue-400">
-                            {wagmiAddress?.slice(0, 8)}...
-                        </span>
+
+                    {/* Addresses */}
+                    <div className="w-full border-t border-zinc-800 pt-1 mt-1">
+                        <div className="text-zinc-500 mb-0.5">Addresses:</div>
+                        <div className="pl-2 space-y-0.5">
+                            <div>
+                                <span className="text-zinc-600">Smart Wallet:</span>{' '}
+                                <span className={townsAddress ? 'text-green-400' : 'text-red-400'}>
+                                    {townsAddress?.slice(0, 10)}...{townsAddress?.slice(-6) || 'null'}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-zinc-600">Identity:</span>{' '}
+                                <span className="text-yellow-400">
+                                    {identityAddress?.slice(0, 10)}...{identityAddress?.slice(-6) || 'null'}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-zinc-600">Wagmi:</span>{' '}
+                                <span className="text-blue-400">
+                                    {wagmiAddress?.slice(0, 10)}...{wagmiAddress?.slice(-6) || 'none'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex justify-between w-full gap-4">
-                        <span>Conn:</span>
-                        <span className="text-yellow-500">{connector?.id || 'none'}</span>
+
+                    {/* Connection Status */}
+                    <div className="w-full border-t border-zinc-800 pt-1 mt-1">
+                        <div className="text-zinc-500 mb-0.5">Connection:</div>
+                        <div className="pl-2 space-y-0.5">
+                            <div>
+                                <span className="text-zinc-600">Connector:</span>{' '}
+                                <span className={connector?.id === 'towns' ? 'text-green-500' : 'text-orange-500'}>
+                                    {connector?.id || 'none'}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-zinc-600">Match:</span>{' '}
+                                <span className={townsAddress?.toLowerCase() === wagmiAddress?.toLowerCase() ? 'text-green-500' : 'text-red-500'}>
+                                    {townsAddress?.toLowerCase() === wagmiAddress?.toLowerCase() ? '✓ OK' : '✗ MISMATCH'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
+
+                    {/* Raw Context (collapsed) */}
+                    <details className="w-full border-t border-zinc-800 pt-1 mt-1">
+                        <summary className="text-zinc-500 cursor-pointer hover:text-zinc-300">Raw Context JSON</summary>
+                        <pre className="text-[8px] text-zinc-400 mt-1 p-1 bg-zinc-900 rounded overflow-auto max-h-40">
+                            {JSON.stringify(rawContext, null, 2)}
+                        </pre>
+                    </details>
                 </div>
             </div>
         )
