@@ -25,22 +25,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 function WagmiWrappedProviders({ children }: { children: React.ReactNode }) {
   const { isTowns, contextReady } = useTowns()
 
-  // Defer rendering Wagmi and RainbowKit until we know the environment
-  if (!contextReady) {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-          <p className="text-zinc-500 font-black uppercase tracking-[0.3em] animate-pulse">Initializing Towns</p>
-        </div>
-      </div>
-    )
-  }
+  // During SSR or until context is confirmed, use browserWagmiConfig as default.
+  // This ensures wagmi hooks (used in children) don't throw during build/prerendering.
+  const config = (contextReady && isTowns) ? townsWagmiConfig : browserWagmiConfig
 
-  // Select appropriate Wagmi config based on REAL environment
-  const config = isTowns ? townsWagmiConfig : browserWagmiConfig
-
-  console.log('Providers: SDK Ready. Mode:', isTowns ? 'TOWNS' : 'BROWSER')
+  console.log('Providers: SDK Status:', { contextReady, isTowns })
 
   return (
     <WagmiProvider config={config}>
@@ -51,7 +40,14 @@ function WagmiWrappedProviders({ children }: { children: React.ReactNode }) {
           borderRadius: 'medium',
         })}
       >
-        {children}
+        {contextReady ? children : (
+          <div className="fixed inset-0 bg-black flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+              <p className="text-zinc-500 font-black uppercase tracking-[0.3em] animate-pulse">Initializing Towns</p>
+            </div>
+          </div>
+        )}
       </RainbowKitProvider>
     </WagmiProvider>
   )
