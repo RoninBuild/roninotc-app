@@ -33,7 +33,7 @@ export function useTownsTransaction() {
         setError(null)
 
         try {
-            const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://escrowronin-bot.roninotc.workers.dev'
+            const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://roninotc-bot.vercel.app'
 
             const response = await fetch(`${botUrl}/api/request-transaction`, {
                 method: 'POST',
@@ -47,18 +47,17 @@ export function useTownsTransaction() {
                 })
             })
 
+            const data = await response.json()
             if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to request transaction')
+                throw new Error(data.error || 'Failed to request transaction')
             }
 
-            const data = await response.json()
             return data
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Unknown error'
             setError(errorMessage)
             console.error('Towns: Transaction request failed', err)
-            throw err
+            throw new Error(errorMessage)
         } finally {
             setIsRequesting(false)
         }

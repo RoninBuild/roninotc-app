@@ -164,6 +164,31 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
         init()
     }, [])
 
+    // 5. Profile Sync Effect (Ensure bot has the latest avatar)
+    useEffect(() => {
+        if (!isTowns || !townsUserId || !contextReady) return
+
+        const syncProfile = async () => {
+            try {
+                const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://roninotc-bot.vercel.app'
+                await fetch(`${botUrl}/api/user/sync-profile`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: townsUserId,
+                        displayName: userDisplayName,
+                        pfpUrl: pfpUrl,
+                    }),
+                })
+                console.log('Towns: Profile synced with bot.')
+            } catch (e) {
+                console.error('Towns: Profile sync failed', e)
+            }
+        }
+
+        syncProfile()
+    }, [isTowns, townsUserId, userDisplayName, pfpUrl, contextReady])
+
 
 
     return (
