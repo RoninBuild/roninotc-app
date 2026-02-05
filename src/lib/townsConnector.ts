@@ -13,9 +13,16 @@ export function townsConnector() {
                 const provider = await sdk.wallet.getEthereumProvider()
                 if (!provider) throw new Error('Towns provider not found')
 
-                const accounts = (await provider.request({
-                    method: 'eth_requestAccounts',
+                // Prioritize eth_accounts to avoid unnecessary permission prompts if already authorized
+                let accounts = (await provider.request({
+                    method: 'eth_accounts',
                 })) as string[]
+
+                if (!accounts || accounts.length === 0) {
+                    accounts = (await provider.request({
+                        method: 'eth_requestAccounts',
+                    })) as string[]
+                }
 
                 const currentChainId = await this.getChainId()
 
