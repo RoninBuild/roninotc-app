@@ -5,7 +5,7 @@ import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit'
 import { WagmiProvider } from 'wagmi'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { townsWagmiConfig, browserWagmiConfig } from '@/lib/wagmi'
-import { TownsProvider, useTowns } from '@/context/TownsContext'
+import { TownsProvider, useTowns, TownsConnectionEnforcer } from '@/context/TownsContext'
 import { useState, useEffect, useMemo } from 'react'
 
 const queryClient = new QueryClient()
@@ -23,7 +23,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
 function WagmiLayer({ children }: { children: React.ReactNode }) {
   const { isTowns, contextReady } = useTowns()
 
-  // Use state to track config and ensure stability during SSR/Prerendering
+  // Start with browser config for SSR stability. 
+  // Switch to Towns-only config on the client if confirmed.
   const [config, setConfig] = useState(browserWagmiConfig)
 
   useEffect(() => {
@@ -41,6 +42,7 @@ function WagmiLayer({ children }: { children: React.ReactNode }) {
           borderRadius: 'medium',
         })}
       >
+        <TownsConnectionEnforcer />
         {contextReady ? children : (
           <div className="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
             <div className="flex flex-col items-center gap-4">

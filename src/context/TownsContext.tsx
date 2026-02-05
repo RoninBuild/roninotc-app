@@ -74,10 +74,6 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     const [rawContext, setRawContext] = useState<any | null>(null)
     const initialized = useRef(false)
 
-    const { connectAsync, connectors } = useConnect()
-    const { address, connector, isConnected } = useAccount()
-    const { disconnectAsync } = useDisconnect()
-
     useEffect(() => {
         if (initialized.current) return
         initialized.current = true
@@ -168,7 +164,33 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
         init()
     }, [])
 
-    // 4. Force Connection Effect
+
+
+    return (
+        <TownsContext.Provider value={{
+            isTowns,
+            townsAddress,
+            identityAddress,
+            userDisplayName,
+            pfpUrl,
+            channelId,
+            townsUserId,
+            isLoading,
+            sdkReady,
+            contextReady,
+            rawContext
+        }}>
+            {children}
+        </TownsContext.Provider>
+    )
+}
+
+export function TownsConnectionEnforcer() {
+    const { isTowns, townsAddress, isLoading } = useTowns()
+    const { connectAsync, connectors } = useConnect()
+    const { address, connector, isConnected } = useAccount()
+    const { disconnectAsync } = useDisconnect()
+
     useEffect(() => {
         if (isLoading || !isTowns || !townsAddress) return
 
@@ -212,21 +234,5 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
         enforceConnection()
     }, [isLoading, isTowns, townsAddress, address, connector, isConnected, connectors, connectAsync, disconnectAsync])
 
-    return (
-        <TownsContext.Provider value={{
-            isTowns,
-            townsAddress,
-            identityAddress,
-            userDisplayName,
-            pfpUrl,
-            channelId,
-            townsUserId,
-            isLoading,
-            sdkReady,
-            contextReady,
-            rawContext
-        }}>
-            {children}
-        </TownsContext.Provider>
-    )
+    return null
 }
