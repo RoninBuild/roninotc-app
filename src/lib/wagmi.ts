@@ -6,6 +6,8 @@ import {
   metaMaskWallet,
   coinbaseWallet
 } from '@rainbow-me/rainbowkit/wallets'
+import { townsConnector } from './townsConnector'
+
 const connectors = connectorsForWallets(
   [
     {
@@ -24,7 +26,7 @@ const connectors = connectorsForWallets(
 )
 
 export const wagmiConfig = createConfig({
-  connectors,
+  connectors: [townsConnector(), ...connectors],
   chains: [base],
   transports: {
     [base.id]: http(),
