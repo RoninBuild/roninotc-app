@@ -15,7 +15,9 @@ interface TownsContextType {
     channelId: string | null
     townsUserId: string | null
     isLoading: boolean
-    rawContext: ExtendedMiniAppContext | null // For debugging
+    sdkReady: boolean
+    contextReady: boolean
+    rawContext: any | null // For debugging
 }
 
 const TownsContext = createContext<TownsContextType>({
@@ -27,6 +29,8 @@ const TownsContext = createContext<TownsContextType>({
     channelId: null,
     townsUserId: null,
     isLoading: true,
+    sdkReady: false,
+    contextReady: false,
     rawContext: null,
 })
 
@@ -65,7 +69,9 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     const [channelId, setChannelId] = useState<string | null>(null)
     const [townsUserId, setTownsUserId] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
-    const [rawContext, setRawContext] = useState<ExtendedMiniAppContext | null>(null)
+    const [sdkReady, setSdkReady] = useState(false)
+    const [contextReady, setContextReady] = useState(false)
+    const [rawContext, setRawContext] = useState<any | null>(null)
     const initialized = useRef(false)
 
     const { connectAsync, connectors } = useConnect()
@@ -78,53 +84,78 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
 
         async function init() {
             try {
-                // 1. Signal Ready (Critical)
+                // 1. Signal Ready
                 sdk.actions.ready()
+                setSdkReady(true)
 
-                // 2. Fetch Capabilities (Verification)
+                // 2. Fetch Capabilities
+                let capabilities: string[] = []
                 try {
                     // @ts-ignore
-                    if (sdk.actions.getCapabilities) await sdk.actions.getCapabilities()
-                } catch (e) { console.warn('Towns: getCapabilities check failed', e) }
+                    if (sdk.actions.getCapabilities) {
+                        capabilities = await sdk.actions.getCapabilities()
+                    }
+                } catch (e) {
+                    console.warn('Towns: getCapabilities check failed', e)
+                }
 
                 // 3. Fetch Context
-                const context = (await sdk.context) as unknown as ExtendedMiniAppContext
+                const context = (await sdk.context) as any
                 console.log('Towns: Full SDK Context:', context)
-                setRawContext(context) // Store for debugging
+                setRawContext(context)
+                setContextReady(true)
 
-                // 4. Identify Environment and Fetch REAL Wallet Address from Provider
-                if (context?.towns?.user?.address) {
-                    console.log('Towns: Environment detected via context.')
+                // 4. Identify Environment
+                const hasTownsField = !!context?.towns
+                const hasTownsCapability = capabilities.includes('towns')
+
+                if (hasTownsField || hasTownsCapability) {
+                    console.log('Towns: Environment confirmed.')
                     setIsTowns(true)
-                    setIdentityAddress(context.towns.user.address)
-                    setTownsUserId(context.towns.user.userId || null)
 
-                    // Correct identity source: context.towns.user
-                    setUserDisplayName(context.towns.user.displayName || context.user?.displayName || context.towns.user.username || 'Towns User')
-                    setPfpUrl(context.towns.user.profileImageUrl || context.user?.pfpUrl || null)
+                    const townsUser = context.towns?.user
+                    setIdentityAddress(townsUser?.address || null)
+                    setTownsUserId(townsUser?.userId || null)
 
-                    setChannelId(context.channelId || null)
+                    // Robust identity fallback chain
+                    const displayName = context.user?.displayName ||
+                        context.user?.username ||
+                        townsUser?.displayName ||
+                        townsUser?.username ||
+                        'Towns User'
 
-                    // Get Wallet Address from SDK Provider (The Towns "Smart Wallet")
+                    const pfpChain = context.user?.pfpUrl ||
+                        context.user?.photoUrl ||
+                        townsUser?.profileImageUrl ||
+                        null
+
+                    setUserDisplayName(displayName)
+                    setPfpUrl(pfpChain)
+
+                    // Robust channelId extraction
+                    const extractedChannelId = context.channelId ||
+                        context.location?.channelId ||
+                        context.towns?.channelId ||
+                        (context.location as any)?.conversationId ||
+                        null
+
+                    setChannelId(extractedChannelId)
+
+                    // Get Wallet Address from SDK (The real Smart Wallet)
                     try {
                         const provider = await sdk.wallet.getEthereumProvider()
                         if (provider) {
-                            console.log('Towns: Fetching accounts from provider...')
                             let accounts = (await provider.request({ method: 'eth_accounts' })) as string[]
                             if (!accounts || accounts.length === 0) {
                                 accounts = (await provider.request({ method: 'eth_requestAccounts' })) as string[]
                             }
                             if (accounts && accounts.length > 0) {
-                                console.log('Towns: Smart Wallet detected:', accounts[0])
                                 setTownsAddress(accounts[0])
-                            } else {
-                                console.warn('Towns: No accounts returned from provider. Falling back to context address.')
-                                setTownsAddress(context.towns.user.address)
                             }
                         }
                     } catch (e) {
-                        console.error('Towns: Failed to fetch accounts from provider', e)
-                        setTownsAddress(context.towns.user.address)
+                        console.error('Towns: Provider account fetch failed', e)
+                        if (townsUser?.address) setTownsAddress(townsUser.address)
                     }
                 }
             } catch (err) {
@@ -182,7 +213,19 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     }, [isLoading, isTowns, townsAddress, address, connector, isConnected, connectors, connectAsync, disconnectAsync])
 
     return (
-        <TownsContext.Provider value={{ isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, channelId, townsUserId, isLoading, rawContext }}>
+        <TownsContext.Provider value={{
+            isTowns,
+            townsAddress,
+            identityAddress,
+            userDisplayName,
+            pfpUrl,
+            channelId,
+            townsUserId,
+            isLoading,
+            sdkReady,
+            contextReady,
+            rawContext
+        }}>
             {children}
         </TownsContext.Provider>
     )

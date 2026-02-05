@@ -444,7 +444,7 @@ export default function DealClient({ dealId }: Props) {
         if (isTowns && channelId) {
             try {
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'create', channelId)
+                await requestTransaction(deal.deal_id, 'create')
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -470,7 +470,7 @@ export default function DealClient({ dealId }: Props) {
         if (isTowns && channelId && deal?.deal_id) {
             try {
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'approve', channelId)
+                await requestTransaction(deal.deal_id, 'approve')
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -495,7 +495,7 @@ export default function DealClient({ dealId }: Props) {
         if (isTowns && channelId && deal?.deal_id) {
             try {
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'fund', channelId)
+                await requestTransaction(deal.deal_id, 'fund')
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -518,7 +518,7 @@ export default function DealClient({ dealId }: Props) {
         if (isTowns && channelId && deal?.deal_id) {
             try {
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'release', channelId)
+                await requestTransaction(deal.deal_id, 'release')
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -551,7 +551,7 @@ export default function DealClient({ dealId }: Props) {
         if (isTowns && channelId && deal?.deal_id) {
             try {
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'dispute', channelId)
+                await requestTransaction(deal.deal_id, 'dispute')
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
