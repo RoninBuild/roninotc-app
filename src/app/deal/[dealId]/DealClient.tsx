@@ -12,6 +12,7 @@ import { useTowns } from '@/context/TownsContext'
 import { useTownsTransaction } from '@/hooks/useTownsTransaction'
 import type { Deal } from '@/lib/types'
 import Link from 'next/link'
+import MemberAvatar from '@/components/MemberAvatar'
 
 type Props = {
     dealId: string
@@ -664,16 +665,18 @@ export default function DealClient({ dealId }: Props) {
                             <div className="space-y-4">
                                 <label className="text-sm text-zinc-500 uppercase tracking-[0.3em] font-black ml-1">SELLER</label>
                                 <div className="flex flex-col gap-3">
-                                    {deal.seller_display_name && (
-                                        <div className="flex items-center gap-4 mb-2">
-                                            {deal.seller_pfp_url ? (
-                                                <img src={deal.seller_pfp_url} className="w-12 h-12 rounded-full border-4 border-white/20" alt="Seller" />
-                                            ) : (
-                                                <div className="w-12 h-12 rounded-full bg-zinc-800 border-4 border-white/20 flex items-center justify-center font-black text-zinc-500">S</div>
-                                            )}
-                                            <span className="text-3xl font-black text-white uppercase tracking-tighter">{deal.seller_display_name}</span>
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-4 mb-2">
+                                        <MemberAvatar
+                                            userId={deal.seller_user_id || ''}
+                                            streamId={deal.channel_id || channelId || ''}
+                                            fallbackName={deal.seller_display_name || 'Seller'}
+                                            fallbackUrl={deal.seller_pfp_url}
+                                            size="md"
+                                        />
+                                        <span className="text-3xl font-black text-white uppercase tracking-tighter">
+                                            {deal.seller_display_name || 'SELLER'}
+                                        </span>
+                                    </div>
                                     <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
                                         {deal.seller_address}
                                         <button
@@ -697,16 +700,18 @@ export default function DealClient({ dealId }: Props) {
                             <div className="space-y-4">
                                 <label className="text-sm text-zinc-500 uppercase tracking-[0.3em] font-black ml-1">BUYER</label>
                                 <div className="flex flex-col gap-3">
-                                    {deal.buyer_display_name && (
-                                        <div className="flex items-center gap-4 mb-2">
-                                            {deal.buyer_pfp_url ? (
-                                                <img src={deal.buyer_pfp_url} className="w-12 h-12 rounded-full border-4 border-white/20" alt="Buyer" />
-                                            ) : (
-                                                <div className="w-12 h-12 rounded-full bg-zinc-800 border-4 border-white/20 flex items-center justify-center font-black text-zinc-500">B</div>
-                                            )}
-                                            <span className="text-3xl font-black text-white uppercase tracking-tighter">{deal.buyer_display_name}</span>
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-4 mb-2">
+                                        <MemberAvatar
+                                            userId={deal.buyer_user_id || ''}
+                                            streamId={deal.channel_id || channelId || ''}
+                                            fallbackName={deal.buyer_display_name || 'Buyer'}
+                                            fallbackUrl={deal.buyer_pfp_url}
+                                            size="md"
+                                        />
+                                        <span className="text-3xl font-black text-white uppercase tracking-tighter">
+                                            {deal.buyer_display_name || 'BUYER'}
+                                        </span>
+                                    </div>
                                     <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
                                         {deal.buyer_address}
                                         <button
