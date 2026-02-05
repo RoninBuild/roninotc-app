@@ -376,20 +376,20 @@ export default function DealClient({ dealId }: Props) {
     useEffect(() => {
         if (!dealId) return
         loadDeal(true)
-        // Set up polling for database status updates
-        const pollInterval = setInterval(() => {
-            loadDeal(false) // Periodic update without full-page loading state
-        }, 2000)
-        return () => clearInterval(pollInterval)
+
+        // Aggressive polling to pick up bot/blockchain changes
+        const interval = setInterval(() => loadDeal(false), 3000)
+        return () => clearInterval(interval)
     }, [dealId])
 
-    useEffect(() => { if (deal) syncBlockchainState() }, [deal?.deal_id, deal?.buyer_address])
-
     useEffect(() => {
-        if (!deal) return
-        const interval = setInterval(() => syncBlockchainState(), 10000) // Blockchain sync can be slower
-        return () => clearInterval(interval)
-    }, [deal, onChainEscrow])
+        if (deal) {
+            syncBlockchainState()
+            const interval = setInterval(() => syncBlockchainState(), 5000)
+            return () => clearInterval(interval)
+        }
+    }, [deal?.deal_id, deal?.buyer_address])
+
 
     useEffect(() => {
         if (isCreateSuccess && createReceipt && deal) {
