@@ -8,7 +8,8 @@ import {
 } from '@rainbow-me/rainbowkit/wallets'
 import { townsConnector } from './townsConnector'
 
-const connectors = connectorsForWallets(
+// Browser config with all connectors
+const browserConnectors = connectorsForWallets(
   [
     {
       groupName: 'Recommended',
@@ -25,11 +26,25 @@ const connectors = connectorsForWallets(
   }
 )
 
-export const wagmiConfig = createConfig({
-  connectors: [townsConnector(), ...connectors],
+// Towns-only config (NO external wallets)
+export const townsWagmiConfig = createConfig({
+  connectors: [townsConnector()], // ONLY Towns connector
   chains: [base],
   transports: {
     [base.id]: http(),
   },
   ssr: true,
 })
+
+// Browser config (with RainbowKit wallets)
+export const browserWagmiConfig = createConfig({
+  connectors: [townsConnector(), ...browserConnectors],
+  chains: [base],
+  transports: {
+    [base.id]: http(),
+  },
+  ssr: true,
+})
+
+// Default export for backwards compatibility
+export const wagmiConfig = browserWagmiConfig
