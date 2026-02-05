@@ -33,7 +33,8 @@ export default function MemberAvatar({ userId, streamId, fallbackName, fallbackU
         streamId: validStreamId
     })
 
-    const { displayName, profileImageUrl, username } = memberData || {}
+    const { displayName, username } = memberData || {}
+    const profileImageUrl = undefined // property 'profileImageUrl' does not exist on memberData
 
     // Priority: Live Data > Fallback URL > Placeholder
     const finalUrl = profileImageUrl || fallbackUrl
