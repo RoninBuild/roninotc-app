@@ -35,6 +35,9 @@ export function useTownsTransaction() {
         try {
             const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://roninotc-bot.vercel.app'
 
+            const controller = new AbortController()
+            const id = setTimeout(() => controller.abort(), 10000)
+
             const response = await fetch(`${botUrl}/api/request-transaction`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -44,17 +47,23 @@ export function useTownsTransaction() {
                     userId: userId || townsUserId || townsAddress,
                     channelId: finalChannelId,
                     smartWalletAddress: townsAddress
-                })
+                }),
+                signal: controller.signal
             })
+
+            clearTimeout(id)
 
             const data = await response.json()
             if (!response.ok) {
+                console.error('Towns: Bot API error', data)
                 throw new Error(data.error || 'Failed to request transaction')
             }
 
             return data
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+            const errorMessage = err instanceof Error
+                ? (err.name === 'AbortError' ? 'Transaction request timed out. High load?' : err.message)
+                : 'Unknown error'
             setError(errorMessage)
             console.error('Towns: Transaction request failed', err)
             throw new Error(errorMessage)

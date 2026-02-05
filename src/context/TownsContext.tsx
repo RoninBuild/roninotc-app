@@ -120,9 +120,17 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
                         townsUser?.username ||
                         'Towns User'
 
-                    const pfpChain = context.user?.pfpUrl ||
-                        context.user?.photoUrl ||
-                        townsUser?.profileImageUrl ||
+                    const ipfsToHttps = (url: string | null | undefined) => {
+                        if (!url) return null
+                        if (url.startsWith('ipfs://')) {
+                            return url.replace('ipfs://', 'https://ipfs.io/ipfs/')
+                        }
+                        return url
+                    }
+
+                    const pfpChain = ipfsToHttps(context.user?.pfpUrl) ||
+                        ipfsToHttps(context.user?.photoUrl) ||
+                        ipfsToHttps(townsUser?.profileImageUrl) ||
                         null
 
                     setUserDisplayName(displayName)
