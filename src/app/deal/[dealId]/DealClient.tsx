@@ -373,12 +373,21 @@ export default function DealClient({ dealId }: Props) {
         } catch (err) { console.error('Sync error:', err) }
     }
 
-    useEffect(() => { loadDeal(true) }, [dealId])
+    useEffect(() => {
+        if (!dealId) return
+        loadDeal(true)
+        // Set up polling for database status updates
+        const pollInterval = setInterval(() => {
+            loadDeal(false) // Periodic update without full-page loading state
+        }, 5000)
+        return () => clearInterval(pollInterval)
+    }, [dealId])
+
     useEffect(() => { if (deal) syncBlockchainState() }, [deal?.deal_id, deal?.buyer_address])
 
     useEffect(() => {
         if (!deal) return
-        const interval = setInterval(() => syncBlockchainState(), 5000)
+        const interval = setInterval(() => syncBlockchainState(), 10000) // Blockchain sync can be slower
         return () => clearInterval(interval)
     }, [deal, onChainEscrow])
 
