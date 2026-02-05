@@ -379,7 +379,7 @@ export default function DealClient({ dealId }: Props) {
         // Set up polling for database status updates
         const pollInterval = setInterval(() => {
             loadDeal(false) // Periodic update without full-page loading state
-        }, 5000)
+        }, 2000)
         return () => clearInterval(pollInterval)
     }, [dealId])
 
