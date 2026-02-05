@@ -178,7 +178,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
 
         const syncProfile = async () => {
             try {
-                const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://roninotc-bot.vercel.app'
+                const botUrl = process.env.NEXT_PUBLIC_BOT_URL || 'https://escrowronin-bot.roninotc.workers.dev'
                 await fetch(`${botUrl}/api/user/sync-profile`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
