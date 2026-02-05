@@ -645,7 +645,7 @@ export default function DealClient({ dealId }: Props) {
                             RONIN <span className="text-brand-gradient">OTC</span>
                         </span>
                     </Link>
-                    <ConnectButton />
+                    {/* Redundant ConnectButton removed to favor global header balance */}
                 </div>
             </header>
 
