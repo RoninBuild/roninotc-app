@@ -11,6 +11,7 @@ interface TownsContextType {
     userDisplayName: string | null
     pfpUrl: string | null
     channelId: string | null
+    townsUserId: string | null
     isLoading: boolean
     rawContext: ExtendedMiniAppContext | null // For debugging
 }
@@ -22,6 +23,7 @@ const TownsContext = createContext<TownsContextType>({
     userDisplayName: null,
     pfpUrl: null,
     channelId: null,
+    townsUserId: null,
     isLoading: true,
     rawContext: null,
 })
@@ -43,6 +45,9 @@ interface ExtendedMiniAppContext {
     towns?: {
         user?: {
             address?: string
+            userId?: string
+            displayName?: string
+            profileImageUrl?: string
             username?: string
         }
         spaceId?: string
@@ -56,6 +61,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     const [userDisplayName, setUserDisplayName] = useState<string | null>(null)
     const [pfpUrl, setPfpUrl] = useState<string | null>(null)
     const [channelId, setChannelId] = useState<string | null>(null)
+    const [townsUserId, setTownsUserId] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [rawContext, setRawContext] = useState<ExtendedMiniAppContext | null>(null)
     const initialized = useRef(false)
@@ -89,8 +95,12 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
                     console.log('Towns: Environment detected via context.')
                     setIsTowns(true)
                     setIdentityAddress(context.towns.user.address)
-                    setUserDisplayName(context.user?.displayName || context.towns.user.username || 'Towns User')
-                    setPfpUrl(context.user?.pfpUrl || null)
+                    setTownsUserId(context.towns.user.userId || null)
+
+                    // Correct identity source: context.towns.user
+                    setUserDisplayName(context.towns.user.displayName || context.user?.displayName || context.towns.user.username || 'Towns User')
+                    setPfpUrl(context.towns.user.profileImageUrl || context.user?.pfpUrl || null)
+
                     setChannelId(context.channelId || null)
 
                     // Get Wallet Address from SDK Provider (The Towns "Smart Wallet")
@@ -170,7 +180,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     }, [isLoading, isTowns, townsAddress, address, connector, isConnected, connectors, connectAsync, disconnectAsync])
 
     return (
-        <TownsContext.Provider value={{ isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, channelId, isLoading, rawContext }}>
+        <TownsContext.Provider value={{ isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, channelId, townsUserId, isLoading, rawContext }}>
             {children}
         </TownsContext.Provider>
     )

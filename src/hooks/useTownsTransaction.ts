@@ -6,7 +6,7 @@ import { useState } from 'react'
 export type TransactionAction = 'create' | 'approve' | 'fund' | 'release' | 'dispute' | 'resolve'
 
 export function useTownsTransaction() {
-    const { isTowns, townsAddress } = useTowns()
+    const { isTowns, townsAddress, townsUserId } = useTowns()
     const [isRequesting, setIsRequesting] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -18,10 +18,6 @@ export function useTownsTransaction() {
     ) => {
         if (!isTowns) {
             throw new Error('Towns transaction only available in Towns mode')
-        }
-
-        if (!townsAddress) {
-            throw new Error('Towns wallet address not available')
         }
 
         setIsRequesting(true)
@@ -36,7 +32,7 @@ export function useTownsTransaction() {
                 body: JSON.stringify({
                     dealId,
                     action,
-                    userId: userId || townsAddress,
+                    userId: userId || townsUserId || townsAddress, // Use townsUserId (Sweepy-style)
                     channelId,
                     smartWalletAddress: townsAddress
                 })
