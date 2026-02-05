@@ -1,15 +1,17 @@
+'use client'
+
 import { useAccount } from 'wagmi'
 import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit'
 import { useTowns } from '../context/TownsContext'
 
 export function ConnectWallet() {
-    const { isTowns, townsAddress, userDisplayName, pfpUrl, isLoading } = useTowns()
+    const { isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, isLoading } = useTowns()
     const { address: wagmiAddress, connector } = useAccount()
 
     // If loading SDK, show nothing or skeleton
     if (isLoading) return null
 
-    // Inside Towns: Show "Connected as [User]"
+    // Inside Towns: Show Towns Branded UI
     if (isTowns) {
         const displayAddr = townsAddress
             ? `${townsAddress.slice(0, 6)}...${townsAddress.slice(-4)}`
@@ -44,10 +46,30 @@ export function ConnectWallet() {
                 </div>
 
                 {/* Debug Overlay - Temporary */}
-                <div className="flex flex-col items-end text-[10px] text-zinc-500 bg-black/80 p-2 rounded border border-zinc-800 font-mono">
-                    <div>Towns: <span className={(townsAddress?.toLowerCase() === wagmiAddress?.toLowerCase()) ? 'text-green-500' : 'text-red-500'}>{townsAddress?.slice(0, 6)}...</span></div>
-                    <div>Wagmi: <span className="text-blue-400">{wagmiAddress?.slice(0, 6)}...</span></div>
-                    <div>Conn: <span className="text-yellow-500">{connector?.id || 'none'}</span></div>
+                <div className="flex flex-col items-end text-[9px] text-zinc-500 bg-black/90 p-2 rounded border border-zinc-800 font-mono space-y-0.5">
+                    <div className="text-zinc-400 uppercase font-bold text-[8px] mb-1 self-start border-b border-zinc-800 w-full">Diagnostics</div>
+                    <div className="flex justify-between w-full gap-4">
+                        <span>Wallet (SDK):</span>
+                        <span className={(townsAddress?.toLowerCase() === wagmiAddress?.toLowerCase()) ? 'text-green-500' : 'text-red-500'}>
+                            {townsAddress?.slice(0, 8)}...
+                        </span>
+                    </div>
+                    <div className="flex justify-between w-full gap-4">
+                        <span>Ident (Ctx):</span>
+                        <span className="text-zinc-600">
+                            {identityAddress?.slice(0, 8)}...
+                        </span>
+                    </div>
+                    <div className="flex justify-between w-full gap-4">
+                        <span>Wagmi:</span>
+                        <span className="text-blue-400">
+                            {wagmiAddress?.slice(0, 8)}...
+                        </span>
+                    </div>
+                    <div className="flex justify-between w-full gap-4">
+                        <span>Conn:</span>
+                        <span className="text-yellow-500">{connector?.id || 'none'}</span>
+                    </div>
                 </div>
             </div>
         )

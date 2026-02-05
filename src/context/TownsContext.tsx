@@ -6,7 +6,8 @@ import { useConnect, useAccount, useDisconnect } from 'wagmi'
 
 interface TownsContextType {
     isTowns: boolean
-    townsAddress: string | null
+    townsAddress: string | null // The Smart Wallet (from Provider)
+    identityAddress: string | null // The Identity ID (from Context)
     userDisplayName: string | null
     pfpUrl: string | null
     isLoading: boolean
@@ -15,6 +16,7 @@ interface TownsContextType {
 const TownsContext = createContext<TownsContextType>({
     isTowns: false,
     townsAddress: null,
+    identityAddress: null,
     userDisplayName: null,
     pfpUrl: null,
     isLoading: true,
@@ -45,6 +47,7 @@ interface ExtendedMiniAppContext {
 export function TownsProvider({ children }: { children: React.ReactNode }) {
     const [isTowns, setIsTowns] = useState(false)
     const [townsAddress, setTownsAddress] = useState<string | null>(null)
+    const [identityAddress, setIdentityAddress] = useState<string | null>(null)
     const [userDisplayName, setUserDisplayName] = useState<string | null>(null)
     const [pfpUrl, setPfpUrl] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -65,27 +68,43 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
 
                 // 2. Fetch Capabilities (Verification)
                 try {
-                    // @ts-ignore - getCapabilities might be missing in types but present in runtime or polyfilled
-                    if (sdk.actions.getCapabilities) {
-                        // @ts-ignore
-                        await sdk.actions.getCapabilities()
-                    }
-                } catch (e) {
-                    console.warn('Towns: getCapabilities check failed', e)
-                }
+                    // @ts-ignore
+                    if (sdk.actions.getCapabilities) await sdk.actions.getCapabilities()
+                } catch (e) { console.warn('Towns: getCapabilities check failed', e) }
 
-                // 3. Fetch Context & Identify Environment
-                // sdk.context is a Promise in newer versions
+                // 3. Fetch Context
                 const context = (await sdk.context) as unknown as ExtendedMiniAppContext
+                console.log('Towns: Full SDK Context:', context)
 
-                // Strict Detection: Must have towns user address
+                // 4. Identify Environment and Fetch REAL Wallet Address from Provider
                 if (context?.towns?.user?.address) {
-                    console.log('Towns environment detected', context.towns)
-
+                    console.log('Towns: Environment detected via context.')
                     setIsTowns(true)
-                    setTownsAddress(context.towns.user.address)
+                    setIdentityAddress(context.towns.user.address)
                     setUserDisplayName(context.user?.displayName || context.towns.user.username || 'Towns User')
                     setPfpUrl(context.user?.pfpUrl || null)
+
+                    // Get Wallet Address from SDK Provider (The Towns "Smart Wallet")
+                    try {
+                        const provider = await sdk.wallet.getEthereumProvider()
+                        if (provider) {
+                            console.log('Towns: Fetching accounts from provider...')
+                            let accounts = (await provider.request({ method: 'eth_accounts' })) as string[]
+                            if (!accounts || accounts.length === 0) {
+                                accounts = (await provider.request({ method: 'eth_requestAccounts' })) as string[]
+                            }
+                            if (accounts && accounts.length > 0) {
+                                console.log('Towns: Smart Wallet detected:', accounts[0])
+                                setTownsAddress(accounts[0])
+                            } else {
+                                console.warn('Towns: No accounts returned from provider. Falling back to context address.')
+                                setTownsAddress(context.towns.user.address)
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Towns: Failed to fetch accounts from provider', e)
+                        setTownsAddress(context.towns.user.address)
+                    }
                 }
             } catch (err) {
                 console.error('Towns Context Init Error', err)
@@ -142,7 +161,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
     }, [isLoading, isTowns, townsAddress, address, connector, isConnected, connectors, connectAsync, disconnectAsync])
 
     return (
-        <TownsContext.Provider value={{ isTowns, townsAddress, userDisplayName, pfpUrl, isLoading }}>
+        <TownsContext.Provider value={{ isTowns, townsAddress, identityAddress, userDisplayName, pfpUrl, isLoading }}>
             {children}
         </TownsContext.Provider>
     )
