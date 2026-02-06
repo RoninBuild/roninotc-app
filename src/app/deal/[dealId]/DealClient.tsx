@@ -1117,6 +1117,21 @@ export default function DealClient({ dealId }: Props) {
                             </motion.div>
                         </div>
                     )}
+                    {deal.status === 'disputed' && (
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="scanline-effect bg-red-500/10" />
+                            <motion.div
+                                initial={{ scale: 2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ type: "spring", damping: 8, stiffness: 100 }}
+                                className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
+                            >
+                                <div className="border-[12px] border-red-600 px-12 py-6 text-red-600 text-8xl font-black rotate-12 bg-black/80 shadow-[0_0_50px_rgba(220,38,38,0.4)] glitch-text">
+                                    DISPUTED
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
                     <div className="space-y-12">
                         {deal.status === 'draft' && (
                             <div className="space-y-12">
