@@ -163,7 +163,7 @@ function CharacterPeeker({ mousePos, isHovered, status, isProcessing }: { mouseP
     const matrixChars = "01".split("")
 
     return (
-        <div className="absolute left-1/2 -top-[320px] -translate-x-1/2 w-[800px] h-[400px] pointer-events-none z-[-2] overflow-visible transition-all duration-700 flex flex-col items-center justify-end">
+        <div className="absolute left-1/2 -top-[340px] -translate-x-1/2 w-[800px] h-[400px] pointer-events-none z-[-2] overflow-visible transition-all duration-700 flex flex-col items-center justify-end">
             <style jsx>{`
                 @keyframes breathe {
                     0%, 100% { transform: translateY(0) scale(1); }
@@ -1059,7 +1059,7 @@ export default function DealClient({ dealId }: Props) {
                     </p>
                 </Card>
 
-                <Card title="EXECUTION" className="p-16 relative overflow-visible" showCharacter={true} status={deal.status} isProcessing={isProcessing}>
+                <Card title="EXECUTION" className="p-16 relative overflow-visible mt-40" showCharacter={true} status={deal.status} isProcessing={isProcessing}>
                     {deal.status === 'released' && (
                         <div className="absolute inset-0 overflow-hidden pointer-events-none">
                             <div className="scanline-effect" />
@@ -1247,23 +1247,30 @@ export default function DealClient({ dealId }: Props) {
 
                 {/* Footer Fees */}
                 <div className="pt-20 space-y-20">
-                    <Card title="PROTOCOL FEES" status={deal.status} isProcessing={isProcessing}>
+                    <div className="pt-20 border-t-2 border-dashed border-white/20">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-16">
-                            <p className="text-zinc-400 text-xl font-medium max-w-xl">Fully decentralized OTC trading. 3% commission when paying with TOWNS.</p>
+                            <div className="space-y-4">
+                                <h3 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none">
+                                    SECURITY <span className="text-brand-gradient">PROTOCOL</span>
+                                </h3>
+                                <p className="text-zinc-500 text-xl font-medium max-w-xl italic">
+                                    Fully decentralized settlement security. Arbiter protection initialized.
+                                    Commission applied to target asset.
+                                </p>
+                            </div>
                             <div className="flex items-center gap-8">
                                 <div className="flex flex-col items-end">
-                                    <span className="text-green-500 font-black text-xs tracking-tighter animate-pulse mb-2 uppercase">Active System</span>
                                     <div className="relative group/toggle flex items-center bg-zinc-950 border-4 border-zinc-800 p-1.5 rounded-full w-40 h-20 transition-all hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]">
                                         <div className="absolute right-2 w-14 h-14 bg-green-500 rounded-full shadow-[0_0_15px_#22c55e] transition-transform" />
                                         <span className="ml-6 text-base font-black text-green-500 tracking-widest">ON</span>
                                     </div>
                                 </div>
-                                <div className="px-12 py-6 border-4 border-white/10 text-white font-black uppercase tracking-widest text-4xl whitespace-nowrap bg-white/5 transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/10 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group rounded-xl">
-                                    $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all">TOWNS</span> 3%
+                                <div className="px-12 py-6 border-4 border-white/10 text-white font-black uppercase tracking-[-0.08em] text-4xl whitespace-nowrap bg-white/5 transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/10 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group rounded-xl">
+                                    $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all font-industrial-mono">TOWNS</span> 3%
                                 </div>
                             </div>
                         </div>
-                    </Card>
+                    </div>
 
                     {deal.escrow_address && (
                         <div className="border-[8px] border-white p-12 bg-[#09090b] relative group/contract">
