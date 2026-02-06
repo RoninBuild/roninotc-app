@@ -894,16 +894,7 @@ export default function DealClient({ dealId }: Props) {
             <GlobalInteractiveGrid status={deal.status} />
             <div className="bg-noise" />
 
-            <header className="relative z-20 border-b-8 border-white bg-[#050505]">
-                <div className="max-w-[1400px] mx-auto px-10 py-8 flex justify-between items-center">
-                    <Link href="/" className="flex items-center gap-3 group">
-                        <span className="font-black text-4xl tracking-tighter text-white uppercase flex items-center gap-2">
-                            RONIN <span className="text-brand-gradient">OTC</span>
-                        </span>
-                    </Link>
-                    {/* Redundant ConnectButton removed to favor global header balance */}
-                </div>
-            </header>
+            {/* Header removed to use Global Header from layout.tsx */}
 
             <main className="relative z-10 max-w-6xl mx-auto px-10 py-20 space-y-12 animate-[fadeIn_0.5s_ease-out] scale-down-pro">
                 <StatusStepper status={deal.status} />
