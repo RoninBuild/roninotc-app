@@ -874,7 +874,7 @@ export default function DealClient({ dealId }: Props) {
                                 <p className="text-zinc-500 text-3xl leading-relaxed italic font-bold max-w-2xl">
                                     "Initialize the secure escrow contract on-chain to proceed."
                                 </p>
-                                {!address ? (
+                                {(!address && !identityAddress && !townsAddress) ? (
                                     <div className="p-16 border-8 border-dashed border-white/10 bg-white/[0.02] flex flex-col items-center gap-10">
                                         <p className="text-sm text-zinc-500 font-black uppercase tracking-[0.5em]">AUTHORIZATION REQUIRED</p>
                                         <ConnectButton />

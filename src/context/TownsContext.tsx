@@ -224,18 +224,16 @@ export function TownsConnectionEnforcer() {
             const currentConnectorId = connector?.id
 
             const isWrongConnector = currentConnectorId !== 'towns'
-            const isWrongAddress = currentAddress !== targetAddress
 
-            if (!isConnected || isWrongConnector || isWrongAddress) {
+            if (!isConnected || isWrongConnector) {
                 console.log('Towns: Connection enforcement triggered.', {
                     isConnected,
                     isWrongConnector,
-                    isWrongAddress,
                     currentAddress,
                     targetAddress
                 })
 
-                if (isConnected) {
+                if (isConnected && isWrongConnector) {
                     console.log('Towns: Disconnecting old session...')
                     await disconnectAsync()
                 }
