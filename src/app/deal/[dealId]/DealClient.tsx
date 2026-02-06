@@ -287,15 +287,15 @@ export default function DealClient({ dealId }: Props) {
         if (onChainEscrow) {
             refetchAllowance()
         }
-    }, [onChainEscrow, address, isBuyer]) // Added isBuyer to trigger refetch when matching logic settles
+    }, [onChainEscrow, address, townsAddress, isBuyer, deal?.buyer_address]) // Added more deps for safety
 
-    // Trigger refetch on any relevant success
+    // Trigger refetch on any relevant success or status change
     useEffect(() => {
-        if (isApproveSuccess || isFundSuccess) {
+        if (isApproveSuccess || isFundSuccess || deal?.status === 'created') {
             refetchAllowance()
             syncBlockchainState()
         }
-    }, [isApproveSuccess, isFundSuccess])
+    }, [isApproveSuccess, isFundSuccess, deal?.status])
 
     // Logic Functions
     const loadDeal = async (showLoading = true) => {
@@ -415,10 +415,12 @@ export default function DealClient({ dealId }: Props) {
     useEffect(() => {
         if (deal) {
             syncBlockchainState()
-            const interval = setInterval(() => syncBlockchainState(), 5000)
+            // More frequent sync when in 'created' or 'funded' state to pick up txs faster
+            const intervalSecs = (deal.status === 'created' || deal.status === 'funded') ? 3000 : 7000
+            const interval = setInterval(() => syncBlockchainState(), intervalSecs)
             return () => clearInterval(interval)
         }
-    }, [deal?.deal_id, deal?.buyer_address])
+    }, [deal?.deal_id, address, townsAddress, identityAddress, deal?.status])
 
 
     useEffect(() => {
@@ -710,6 +712,23 @@ export default function DealClient({ dealId }: Props) {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
                                 </svg>
+                            </button>
+                            {/* NEW: Refresh Button */}
+                            <button
+                                onClick={() => {
+                                    setTxStatus('REFRESHING...')
+                                    loadDeal(false)
+                                    syncBlockchainState()
+                                    refetchAllowance()
+                                    setTimeout(() => setTxStatus(null), 1000)
+                                }}
+                                className="ml-4 p-3 bg-white/5 border-2 border-white/10 hover:border-white/40 text-zinc-400 hover:text-white transition-all rounded-lg flex items-center gap-2"
+                                title="Sync Blockchain State"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${txStatus === 'REFRESHING...' ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span className="text-xs font-black uppercase tracking-widest hidden md:inline">Refresh</span>
                             </button>
                         </div>
                     </div>
