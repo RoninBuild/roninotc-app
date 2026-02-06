@@ -274,7 +274,12 @@ export default function DealClient({ dealId }: Props) {
         address: USDC_ADDRESS,
         abi: erc20Abi,
         functionName: 'allowance',
-        args: address && onChainEscrow ? [address, onChainEscrow] : undefined,
+        args: address && onChainEscrow ? [
+            // If we are the buyer in Towns, we MUST check the allowance for the buyer_address (F17)
+            // because wagmi's 'address' might be the Identity ID (063).
+            isBuyer && deal?.buyer_address ? (deal.buyer_address as `0x${string}`) : (address as `0x${string}`),
+            onChainEscrow
+        ] : undefined,
     })
 
     useEffect(() => {
