@@ -282,11 +282,20 @@ export default function DealClient({ dealId }: Props) {
         ] : undefined,
     })
 
+
     useEffect(() => {
         if (onChainEscrow) {
             refetchAllowance()
         }
-    }, [onChainEscrow, address])
+    }, [onChainEscrow, address, isBuyer]) // Added isBuyer to trigger refetch when matching logic settles
+
+    // Trigger refetch on any relevant success
+    useEffect(() => {
+        if (isApproveSuccess || isFundSuccess) {
+            refetchAllowance()
+            syncBlockchainState()
+        }
+    }, [isApproveSuccess, isFundSuccess])
 
     // Logic Functions
     const loadDeal = async (showLoading = true) => {
@@ -609,6 +618,22 @@ export default function DealClient({ dealId }: Props) {
     const needsApproval = !!(onChainEscrow && currentAllowance < parseUsdcAmount(deal?.amount || 0))
     const isDeadlinePassed = deal ? Date.now() > deal.deadline * 1000 : false
 
+    // Debug logging
+    useEffect(() => {
+        console.log('DealClient Debug:', {
+            wagmiAddress: address,
+            townsAddress,
+            identityAddress,
+            isBuyer,
+            isSeller,
+            needsApproval,
+            allowance: currentAllowance?.toString(),
+            onChainEscrow,
+            dealBuyer: deal?.buyer_address,
+            dealSeller: deal?.seller_address
+        })
+    }, [address, townsAddress, identityAddress, isBuyer, isSeller, needsApproval, currentAllowance, onChainEscrow, deal])
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#050505] flex items-center justify-center font-black">
@@ -663,6 +688,11 @@ export default function DealClient({ dealId }: Props) {
                         <span>{txStatus || 'Processing...'}</span>
                     </div>
                 )}
+
+                {/* DEBUG PANEL - Hidden but can be seen in console or toggled if needed */}
+                <div className="sr-only" aria-hidden="true">
+                    Debug: {JSON.stringify({ address, isBuyer, needsApproval, allowance: currentAllowance?.toString() })}
+                </div>
 
                 {/* Status Hero */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-10 pb-20 border-b-8 border-white">

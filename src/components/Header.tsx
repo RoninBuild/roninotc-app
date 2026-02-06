@@ -13,6 +13,12 @@ export function Header() {
     // Priority for Towns users: use their real smart wallet address for balance display
     const effectiveAddress = isTowns && townsAddress ? (townsAddress as `0x${string}`) : wagmiAddress
 
+    useEffect(() => {
+        if (effectiveAddress) {
+            console.log('Header balance check address:', effectiveAddress, 'isTowns:', isTowns, 'townsAddress:', townsAddress, 'wagmiAddress:', wagmiAddress)
+        }
+    }, [effectiveAddress, isTowns, townsAddress, wagmiAddress])
+
     const { data: balanceData } = useBalance({
         address: effectiveAddress,
         token: USDC_ADDRESS,

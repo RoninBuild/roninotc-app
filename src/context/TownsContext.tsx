@@ -158,12 +158,19 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
                                 accounts = (await provider.request({ method: 'eth_requestAccounts' })) as string[]
                             }
                             if (accounts && accounts.length > 0) {
+                                console.log('Towns: Wallet address found via provider:', accounts[0])
                                 setTownsAddress(accounts[0])
                             }
+                        } else {
+                            // Fallback to context fields if provider fails
+                            const fallback = context.walletAddress || context.user?.walletAddress || context.location?.walletAddress || townsUser?.address
+                            console.log('Towns: Using fallback wallet address:', fallback)
+                            if (fallback) setTownsAddress(fallback)
                         }
                     } catch (e) {
                         console.error('Towns: Provider account fetch failed', e)
-                        if (townsUser?.address) setTownsAddress(townsUser.address)
+                        const fallback = context.walletAddress || context.user?.walletAddress || context.location?.walletAddress || townsUser?.address
+                        if (fallback) setTownsAddress(fallback)
                     }
                 }
             } catch (err) {
