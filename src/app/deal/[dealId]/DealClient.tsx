@@ -595,11 +595,12 @@ export default function DealClient({ dealId }: Props) {
 
     const handleCreateEscrow = async () => {
         if (!deal) return
-        if (isTowns && channelId) {
+        if (isTowns && (channelId || deal?.channel_id)) {
+            console.log('[Towns] handleCreateEscrow using channelId:', channelId || deal?.channel_id)
             try {
                 setActiveAction('create')
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'create')
+                await requestTransaction(deal.deal_id, 'create', deal?.channel_id)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -634,11 +635,12 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleApproveUsdc = async () => {
-        if (isTowns && channelId && deal?.deal_id) {
+        if (isTowns && (channelId || deal?.channel_id) && deal?.deal_id) {
+            console.log('[Towns] handleApproveUsdc using channelId:', channelId || deal?.channel_id)
             try {
                 setActiveAction('approve')
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'approve')
+                await requestTransaction(deal.deal_id, 'approve', deal?.channel_id)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -672,11 +674,12 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleFundEscrow = async () => {
-        if (isTowns && channelId && deal?.deal_id) {
+        if (isTowns && (channelId || deal?.channel_id) && deal?.deal_id) {
+            console.log('[Towns] handleFundEscrow using channelId:', channelId || deal?.channel_id)
             try {
                 setActiveAction('fund')
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'fund')
+                await requestTransaction(deal.deal_id, 'fund', deal?.channel_id)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -708,11 +711,12 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleReleaseFunds = async () => {
-        if (isTowns && channelId && deal?.deal_id) {
+        if (isTowns && (channelId || deal?.channel_id) && deal?.deal_id) {
+            console.log('[Towns] handleReleaseFunds using channelId:', channelId || deal?.channel_id)
             try {
                 setActiveAction('release')
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'release')
+                await requestTransaction(deal.deal_id, 'release', deal?.channel_id)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -765,11 +769,12 @@ export default function DealClient({ dealId }: Props) {
     }
 
     const handleDispute = async () => {
-        if (isTowns && channelId && deal?.deal_id) {
+        if (isTowns && (channelId || deal?.channel_id) && deal?.deal_id) {
+            console.log('[Towns] handleDispute using channelId:', channelId || deal?.channel_id)
             try {
                 setActiveAction('dispute')
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'dispute')
+                await requestTransaction(deal.deal_id, 'dispute', deal?.channel_id)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -1144,12 +1149,12 @@ export default function DealClient({ dealId }: Props) {
                                     </button>
                                 ) : isBuyer ? (
                                     <div className="space-y-6">
-                                        <button onClick={handleReleaseFunds} disabled={isProcessing} className="w-full bg-white text-black font-black py-10 rounded-none text-5xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px] flex items-center justify-center gap-6">
-                                            {(isReleasing || isReleaseConfirming || activeAction === 'release' || isProcessing) && <LoadingSpinner size="h-12 w-12" />}
-                                            {isReleasing || isReleaseConfirming || activeAction === 'release' || isProcessing ? 'RELEASING...' : 'RELEASE TO SELLER'}
+                                        <button onClick={handleReleaseFunds} disabled={isAnyTxPending || isProcessing} className="w-full bg-white text-black font-black py-10 rounded-none text-5xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px] flex items-center justify-center gap-6">
+                                            {(isReleasing || isReleaseConfirming || activeAction === 'release' || isProcessing || isTownsTxPending) && <LoadingSpinner size="h-12 w-12" />}
+                                            {isReleasing || isReleaseConfirming || activeAction === 'release' || isProcessing || isTownsTxPending ? 'RELEASING...' : 'RELEASE TO SELLER'}
                                         </button>
-                                        <button onClick={handleDispute} disabled={isProcessing} className="w-full py-6 text-zinc-500 hover:text-white font-black uppercase tracking-[0.2em] text-lg transition-all underline decoration-4 underline-offset-8 flex items-center justify-center gap-4">
-                                            {(isDisputing || isDisputeConfirming || activeAction === 'dispute' || isProcessing) && <LoadingSpinner size="h-5 w-5" />}
+                                        <button onClick={handleDispute} disabled={isAnyTxPending || isProcessing} className="w-full py-6 text-zinc-500 hover:text-white font-black uppercase tracking-[0.2em] text-lg transition-all underline decoration-4 underline-offset-8 flex items-center justify-center gap-4">
+                                            {(isDisputing || isDisputeConfirming || activeAction === 'dispute' || isProcessing || isTownsTxPending) && <LoadingSpinner size="h-5 w-5" />}
                                             OPEN DISPUTE
                                         </button>
                                     </div>
