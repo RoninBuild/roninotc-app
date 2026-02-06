@@ -67,19 +67,34 @@ export function Header() {
 
                     {/* Wallet Area */}
                     <div className="flex items-center gap-4">
-                        {mounted && isConnected && balanceData && (
-                            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-[#050505] rounded-xl border-2 border-blue-500/30 relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-blue-500/10 blur-md group-hover:bg-blue-500/20 transition-all" />
-                                <span className="relative text-[10px] text-blue-200 font-bold tracking-wider uppercase mr-2">Base</span>
-                                <div className="relative flex flex-col">
-                                    <div className="flex items-center gap-1.5 text-white font-bold text-lg tracking-tight">
-                                        {Number(balanceData.formatted).toFixed(2)}
-                                        <span className="text-blue-400 font-black">USDC</span>
+                        {mounted && isConnected && (
+                            <div className="hidden md:flex items-center gap-3">
+                                {/* Signer Balance (The account currently connected) */}
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#050505] rounded-lg border border-white/10 relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <span className="relative text-[8px] text-zinc-500 font-black tracking-widest uppercase">Signer</span>
+                                    <div className="relative flex items-center gap-1.5 text-white font-bold text-sm">
+                                        <SignerBalance address={wagmiAddress as `0x${string}`} />
+                                        <span className="text-zinc-500 font-black text-[10px]">USDC</span>
                                     </div>
-                                    <span className="text-[6px] text-blue-300/50 font-mono truncate max-w-[100px]">
-                                        {effectiveAddress}
-                                    </span>
                                 </div>
+
+                                {/* Smart Wallet Balance (The Towns Smart Wallet) */}
+                                {isTowns && townsAddress && (
+                                    <div className="flex items-center gap-2 px-4 py-2 bg-[#050505] rounded-xl border-2 border-blue-500/30 relative overflow-hidden group shadow-[0_0_20px_rgba(59,130,246,0.1)]">
+                                        <div className="absolute inset-0 bg-blue-500/10 blur-sm group-hover:bg-blue-500/20 transition-all" />
+                                        <span className="relative text-[10px] text-blue-200 font-black tracking-wider uppercase mr-1">Wallet</span>
+                                        <div className="relative flex flex-col">
+                                            <div className="flex items-center gap-1.5 text-white font-black text-lg tracking-tight">
+                                                <WalletBalance address={townsAddress as `0x${string}`} />
+                                                <span className="text-blue-400 font-black">USDC</span>
+                                            </div>
+                                            <span className="text-[6px] text-blue-300/50 font-mono truncate max-w-[80px]">
+                                                {townsAddress}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                         <ConnectWallet />
@@ -88,4 +103,28 @@ export function Header() {
             </div>
         </header>
     )
+}
+
+function SignerBalance({ address }: { address: `0x${string}` }) {
+    const { data: balance } = useBalance({
+        address,
+        token: USDC_ADDRESS,
+        chainId: 8453,
+    })
+    return <span>{balance ? Number(balance.formatted).toFixed(1) : '0.0'}</span>
+}
+
+function WalletBalance({ address }: { address: `0x${string}` }) {
+    const { data: balance, refetch } = useBalance({
+        address,
+        token: USDC_ADDRESS,
+        chainId: 8453,
+    })
+
+    useEffect(() => {
+        const interval = setInterval(() => refetch(), 4000)
+        return () => clearInterval(interval)
+    }, [refetch])
+
+    return <span>{balance ? Number(balance.formatted).toFixed(2) : '0.00'}</span>
 }

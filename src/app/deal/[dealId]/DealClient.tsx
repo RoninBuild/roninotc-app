@@ -374,18 +374,25 @@ export default function DealClient({ dealId }: Props) {
         (townsAddress?.toLowerCase() === deal?.buyer_address?.toLowerCase()) ||
         (townsUserId?.toLowerCase() === deal?.buyer_user_id?.toLowerCase())
 
-    // Blockchain Reads (Basic allowance only, Escrow status moved to publicClient for reliability)
-    const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    // Blockchain Reads (Dual Allowance Scan)
+    const { data: allowanceSigner, refetch: refetchAllowanceSigner } = useReadContract({
         address: USDC_ADDRESS,
         abi: erc20Abi,
         functionName: 'allowance',
-        args: address && onChainEscrow ? [
-            // If we are the buyer in Towns, we MUST check the allowance for the buyer_address (F17)
-            // because wagmi's 'address' might be the Identity ID (063).
-            isBuyer && deal?.buyer_address ? (deal.buyer_address as `0x${string}`) : (address as `0x${string}`),
-            onChainEscrow
-        ] : undefined,
+        args: address && onChainEscrow ? [address as `0x${string}`, onChainEscrow] : undefined,
     })
+
+    const { data: allowanceSmart, refetch: refetchAllowanceSmart } = useReadContract({
+        address: USDC_ADDRESS,
+        abi: erc20Abi,
+        functionName: 'allowance',
+        args: townsAddress && onChainEscrow ? [townsAddress as `0x${string}`, onChainEscrow] : undefined,
+    })
+
+    const refetchAllowance = () => {
+        refetchAllowanceSigner()
+        refetchAllowanceSmart()
+    }
 
 
     useEffect(() => {
@@ -833,9 +840,13 @@ export default function DealClient({ dealId }: Props) {
         isCreateConfirming || isApproveConfirming || isFundConfirming || isReleaseConfirming || isRefundConfirming || isDisputeConfirming || isResolveConfirming ||
         isTownsTxPending
 
-    // Use BigInt(0) if allowance is loading/undefined to force approval check
-    const currentAllowance = allowance !== undefined ? allowance : BigInt(0)
-    const needsApproval = !!(onChainEscrow && currentAllowance < parseUsdcAmount(deal?.amount || 0))
+    // Allowance Logic: True if BOTH wallets lack allowance
+    const signerAllowance = allowanceSigner !== undefined ? allowanceSigner : BigInt(0)
+    const smartAllowance = allowanceSmart !== undefined ? allowanceSmart : BigInt(0)
+    const hasAllowance = (signerAllowance >= parseUsdcAmount(deal?.amount || 0)) ||
+        (smartAllowance >= parseUsdcAmount(deal?.amount || 0))
+
+    const needsApproval = !!(onChainEscrow && !hasAllowance)
     const isDeadlinePassed = deal ? Date.now() > deal.deadline * 1000 : false
 
     // Debug logging
@@ -847,12 +858,14 @@ export default function DealClient({ dealId }: Props) {
             isBuyer,
             isSeller,
             needsApproval,
-            allowance: currentAllowance?.toString(),
+            signerAllowance: signerAllowance?.toString(),
+            smartAllowance: smartAllowance?.toString(),
+            hasAllowance,
             onChainEscrow,
             dealBuyer: deal?.buyer_address,
             dealSeller: deal?.seller_address
         })
-    }, [address, townsAddress, identityAddress, isBuyer, isSeller, needsApproval, currentAllowance, onChainEscrow, deal])
+    }, [address, townsAddress, identityAddress, isBuyer, isSeller, needsApproval, signerAllowance, smartAllowance, hasAllowance, onChainEscrow, deal])
 
     if (loading) {
         return (
@@ -907,7 +920,7 @@ export default function DealClient({ dealId }: Props) {
 
                 {/* DEBUG PANEL - Hidden but can be seen in console or toggled if needed */}
                 <div className="sr-only" aria-hidden="true">
-                    Debug: {JSON.stringify({ address, isBuyer, needsApproval, allowance: currentAllowance?.toString() })}
+                    Debug: {JSON.stringify({ address, isBuyer, needsApproval, signerAllowance: signerAllowance?.toString(), smartAllowance: smartAllowance?.toString() })}
                 </div>
 
                 {/* Status Hero */}
@@ -1280,10 +1293,10 @@ export default function DealClient({ dealId }: Props) {
                         <div className="flex flex-col md:flex-row justify-between items-center gap-16">
                             <div className="space-y-4">
                                 <h3 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none">
-                                    ПРОТОКОЛ <span className="text-brand-gradient">ФИИ</span>
+                                    PROTOCOL <span className="text-brand-gradient">FEE</span>
                                 </h3>
                                 <p className="text-zinc-500 text-xl font-medium max-w-xl italic">
-                                    Вам не нужно беспокоиться о комиссии, она заплатится сама в токене TOWNS.
+                                    Automated commission handled in TOWNS. No manual interaction required.
                                 </p>
                             </div>
                             <div className="flex items-center gap-8">
@@ -1293,8 +1306,10 @@ export default function DealClient({ dealId }: Props) {
                                         <span className="ml-6 text-base font-black text-green-500 tracking-widest">ON</span>
                                     </div>
                                 </div>
-                                <div className="px-12 py-6 border-4 border-white/10 text-white font-black uppercase tracking-[-0.08em] text-4xl whitespace-nowrap bg-white/5 transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/10 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group rounded-xl">
-                                    $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all font-black text-5xl">TOWNS</span> 3%
+                                <div className="px-12 py-8 border-4 border-white/10 text-white font-black uppercase tracking-tighter text-4xl whitespace-nowrap bg-white/5 transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/10 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group rounded-xl flex items-center gap-2">
+                                    <span className="text-zinc-500 text-5xl">$</span>
+                                    <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all font-black text-6xl">TOWNS</span>
+                                    <span className="text-green-500 text-5xl ml-1">3%</span>
                                 </div>
                             </div>
                         </div>
@@ -1302,9 +1317,9 @@ export default function DealClient({ dealId }: Props) {
 
                     {deal.escrow_address && (
                         <div className="border-2 border-white/10 p-12 bg-[#09090b] relative group/contract rounded-2xl overflow-hidden shadow-2xl">
-                            <div className="absolute top-0 right-10 -translate-y-1/2 bg-zinc-800 text-zinc-400 px-6 py-2 font-black uppercase text-xs tracking-widest border border-white/10">ПРОВЕРЕНО</div>
+                            <div className="absolute top-0 right-10 -translate-y-1/2 bg-zinc-800 text-zinc-400 px-6 py-2 font-black uppercase text-xs tracking-widest border border-white/10">VERIFIED</div>
                             <div className="space-y-6">
-                                <label className="text-sm text-zinc-600 font-black uppercase tracking-[0.4em]">КОНТРАКТ СДЕЛКИ</label>
+                                <label className="text-zinc-600 font-black uppercase tracking-[0.4em] text-sm">ESCROW CONTRACT</label>
                                 <div className="relative group/addr">
                                     <a href={`https://basescan.org/address/${deal.escrow_address}`} target="_blank" rel="noopener noreferrer" className="font-industrial-mono text-3xl text-zinc-300 hover:text-white break-all block leading-tight underline decoration-2 underline-offset-8 decoration-white/20 hover:decoration-white/50 transition-all">
                                         {deal.escrow_address}
