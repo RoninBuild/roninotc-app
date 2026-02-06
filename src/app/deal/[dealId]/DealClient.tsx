@@ -239,8 +239,19 @@ export default function DealClient({ dealId }: Props) {
 
     // On-chain state
     const [isProcessing, setIsProcessing] = useState(false)
+    const [activeAction, setActiveAction] = useState<string | null>(null) // TRACKS CURRENT ACTION
     const [onChainEscrow, setOnChainEscrow] = useState<`0x${string}` | null>(null)
     const [winnerAddr, setWinnerAddr] = useState<string | null>(null)
+
+    // Track status changes to clear activeAction for Towns
+    const lastStatus = useRef(deal?.status)
+    useEffect(() => {
+        if (deal?.status !== lastStatus.current) {
+            console.log(`Towns: Status changed from ${lastStatus.current} to ${deal?.status}. Clearing activeAction.`)
+            setActiveAction(null)
+            lastStatus.current = deal?.status
+        }
+    }, [deal?.status])
 
     // Contract write hooks
     const { writeContract: createEscrow, data: createHash, isPending: isCreating } = useWriteContract()
@@ -503,12 +514,14 @@ export default function DealClient({ dealId }: Props) {
         if (!deal) return
         if (isTowns && channelId) {
             try {
+                setActiveAction('create')
                 setTxStatus('Requesting...')
                 await requestTransaction(deal.deal_id, 'create')
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
             } catch (e) {
+                setActiveAction(null)
                 setTxStatus('Failed')
                 setTimeout(() => setTxStatus(null), 3000)
                 return
@@ -517,6 +530,7 @@ export default function DealClient({ dealId }: Props) {
         if (!checkNetwork()) return
         if (!deal || !address) return
         setIsProcessing(true)
+        setActiveAction('create')
         const amount = parseUsdcAmount(deal.amount)
         const memoHash = keccak256(toHex(deal.deal_id))
         handleTx(async () => {
@@ -527,6 +541,9 @@ export default function DealClient({ dealId }: Props) {
                     functionName: 'createEscrow',
                     args: [deal.seller_address as `0x${string}`, USDC_ADDRESS, amount, BigInt(deal.deadline), ARBITRATOR_ADDRESS, memoHash],
                 })
+            } catch (e) {
+                setActiveAction(null)
+                throw e
             } finally {
                 setIsProcessing(false)
             }
@@ -536,12 +553,14 @@ export default function DealClient({ dealId }: Props) {
     const handleApproveUsdc = async () => {
         if (isTowns && channelId && deal?.deal_id) {
             try {
+                setActiveAction('approve')
                 setTxStatus('Requesting...')
                 await requestTransaction(deal.deal_id, 'approve')
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
             } catch (e) {
+                setActiveAction(null)
                 setTxStatus('Failed')
                 setTimeout(() => setTxStatus(null), 3000)
                 return
@@ -550,6 +569,7 @@ export default function DealClient({ dealId }: Props) {
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         setIsProcessing(true)
+        setActiveAction('approve')
         const amount = parseUsdcAmount(deal.amount)
         handleTx(async () => {
             try {
@@ -559,6 +579,9 @@ export default function DealClient({ dealId }: Props) {
                     functionName: 'approve',
                     args: [deal.escrow_address as `0x${string}`, amount],
                 })
+            } catch (e) {
+                setActiveAction(null)
+                throw e
             } finally {
                 setIsProcessing(false)
             }
@@ -568,12 +591,14 @@ export default function DealClient({ dealId }: Props) {
     const handleFundEscrow = async () => {
         if (isTowns && channelId && deal?.deal_id) {
             try {
+                setActiveAction('fund')
                 setTxStatus('Requesting...')
                 await requestTransaction(deal.deal_id, 'fund')
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
             } catch (e) {
+                setActiveAction(null)
                 setTxStatus('Failed')
                 setTimeout(() => setTxStatus(null), 3000)
                 return
@@ -582,6 +607,7 @@ export default function DealClient({ dealId }: Props) {
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         setIsProcessing(true)
+        setActiveAction('fund')
         handleTx(async () => {
             try {
                 await fundEscrow({
@@ -589,6 +615,9 @@ export default function DealClient({ dealId }: Props) {
                     abi: escrowAbi,
                     functionName: 'fund',
                 })
+            } catch (e) {
+                setActiveAction(null)
+                throw e
             } finally {
                 setIsProcessing(false)
             }
@@ -598,12 +627,14 @@ export default function DealClient({ dealId }: Props) {
     const handleReleaseFunds = async () => {
         if (isTowns && channelId && deal?.deal_id) {
             try {
+                setActiveAction('release')
                 setTxStatus('Requesting...')
                 await requestTransaction(deal.deal_id, 'release')
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
             } catch (e) {
+                setActiveAction(null)
                 setTxStatus('Failed')
                 setTimeout(() => setTxStatus(null), 3000)
                 return
@@ -612,6 +643,7 @@ export default function DealClient({ dealId }: Props) {
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         setIsProcessing(true)
+        setActiveAction('release')
         handleTx(async () => {
             try {
                 await releaseEscrow({
@@ -619,6 +651,9 @@ export default function DealClient({ dealId }: Props) {
                     abi: escrowAbi,
                     functionName: 'release',
                 })
+            } catch (e) {
+                setActiveAction(null)
+                throw e
             } finally {
                 setIsProcessing(false)
             }
@@ -629,6 +664,7 @@ export default function DealClient({ dealId }: Props) {
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         setIsProcessing(true)
+        setActiveAction('refund')
         handleTx(async () => {
             try {
                 await refundEscrow({
@@ -636,6 +672,9 @@ export default function DealClient({ dealId }: Props) {
                     abi: escrowAbi,
                     functionName: 'refundAfterDeadline',
                 })
+            } catch (e) {
+                setActiveAction(null)
+                throw e
             } finally {
                 setIsProcessing(false)
             }
@@ -645,12 +684,14 @@ export default function DealClient({ dealId }: Props) {
     const handleDispute = async () => {
         if (isTowns && channelId && deal?.deal_id) {
             try {
+                setActiveAction('dispute')
                 setTxStatus('Requesting...')
                 await requestTransaction(deal.deal_id, 'dispute')
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
             } catch (e) {
+                setActiveAction(null)
                 setTxStatus('Failed')
                 setTimeout(() => setTxStatus(null), 3000)
                 return
@@ -659,6 +700,7 @@ export default function DealClient({ dealId }: Props) {
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
         setIsProcessing(true)
+        setActiveAction('dispute')
         handleTx(async () => {
             try {
                 await openDispute({
@@ -666,14 +708,18 @@ export default function DealClient({ dealId }: Props) {
                     abi: escrowAbi,
                     functionName: 'openDispute',
                 })
+            } catch (e) {
+                setActiveAction(null)
+                throw e
             } finally {
                 setIsProcessing(false)
             }
         }, 'Disputing...')
     }
 
-    const isAnyTxPending = isCreating || isApproving || isFunding || isReleasing || isRefunding ||
-        isCreateConfirming || isApproveConfirming || isFundConfirming || isReleaseConfirming || isRefundConfirming || isTownsTxPending
+    const isAnyTxPending = isCreating || isApproving || isFunding || isReleasing || isRefunding || isDisputing || isResolving ||
+        isCreateConfirming || isApproveConfirming || isFundConfirming || isReleaseConfirming || isRefundConfirming || isDisputeConfirming || isResolveConfirming ||
+        isTownsTxPending
 
     // Use BigInt(0) if allowance is loading/undefined to force approval check
     const currentAllowance = allowance !== undefined ? allowance : BigInt(0)
@@ -936,9 +982,9 @@ export default function DealClient({ dealId }: Props) {
                                         SWITCH TO BASE
                                     </button>
                                 ) : isBuyer ? (
-                                    <button onClick={handleCreateEscrow} disabled={isAnyTxPending || isProcessing} className="w-full bg-white text-black font-black py-10 rounded-none text-4xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px] flex items-center justify-center gap-6">
-                                        {(isAnyTxPending || isProcessing) && <LoadingSpinner size="h-10 w-10" />}
-                                        {isAnyTxPending || isProcessing ? 'INITIALIZING...' : 'DEPLOY ESCROW CONTRACT'}
+                                    <button onClick={handleCreateEscrow} disabled={isProcessing} className="w-full bg-white text-black font-black py-10 rounded-none text-4xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px] flex items-center justify-center gap-6">
+                                        {(isCreating || isCreateConfirming || activeAction === 'create' || isProcessing) && <LoadingSpinner size="h-10 w-10" />}
+                                        {isCreating || isCreateConfirming || activeAction === 'create' || isProcessing ? 'INITIALIZING...' : 'DEPLOY ESCROW CONTRACT'}
                                     </button>
                                 ) : (
                                     <div className="p-12 bg-white/5 border-4 border-white/10 text-center">
@@ -961,13 +1007,13 @@ export default function DealClient({ dealId }: Props) {
                                     </button>
                                 ) : isBuyer ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <button onClick={handleApproveUsdc} disabled={isAnyTxPending || !needsApproval || isProcessing} className={`py-8 px-10 border-4 font-black text-2xl uppercase tracking-widest transition-all flex items-center justify-center gap-4 ${!needsApproval ? 'border-zinc-800 text-zinc-600 bg-zinc-900 pointer-events-none' : 'border-white text-white hover:bg-white/10'}`}>
-                                            {(isApproving || isProcessing) && <LoadingSpinner />}
+                                        <button onClick={handleApproveUsdc} disabled={!needsApproval || isProcessing} className={`py-8 px-10 border-4 font-black text-2xl uppercase tracking-widest transition-all flex items-center justify-center gap-4 ${!needsApproval ? 'border-zinc-800 text-zinc-600 bg-zinc-900 pointer-events-none' : 'border-white text-white hover:bg-white/10'}`}>
+                                            {(isApproving || isApproveConfirming || activeAction === 'approve' || isProcessing) && <LoadingSpinner />}
                                             {!needsApproval ? 'APPROVED' : '1. ALLOW USDC'}
                                         </button>
-                                        <button onClick={handleFundEscrow} disabled={isAnyTxPending || needsApproval || isProcessing} className="py-8 px-10 bg-white text-black hover:bg-zinc-200 disabled:opacity-50 font-black text-2xl uppercase tracking-widest transition-all border-b-[12px] border-zinc-300 active:translate-y-2 active:border-b-[6px] flex items-center justify-center gap-4">
-                                            {(isFunding || isProcessing) && <LoadingSpinner />}
-                                            {isFunding || isProcessing ? 'FUNDING...' : '2. DEPOSIT FUNDS'}
+                                        <button onClick={handleFundEscrow} disabled={needsApproval || isProcessing} className="py-8 px-10 bg-white text-black hover:bg-zinc-200 disabled:opacity-50 font-black text-2xl uppercase tracking-widest transition-all border-b-[12px] border-zinc-300 active:translate-y-2 active:border-b-[6px] flex items-center justify-center gap-4">
+                                            {(isFunding || isFundConfirming || activeAction === 'fund' || isProcessing) && <LoadingSpinner />}
+                                            {isFunding || isFundConfirming || activeAction === 'fund' || isProcessing ? 'FUNDING...' : '2. DEPOSIT FUNDS'}
                                         </button>
                                     </div>
                                 ) : (
@@ -989,12 +1035,12 @@ export default function DealClient({ dealId }: Props) {
                                     </button>
                                 ) : isBuyer ? (
                                     <div className="space-y-6">
-                                        <button onClick={handleReleaseFunds} disabled={isAnyTxPending || isProcessing} className="w-full bg-white text-black font-black py-10 rounded-none text-5xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px] flex items-center justify-center gap-6">
-                                            {(isReleasing || isProcessing) && <LoadingSpinner size="h-12 w-12" />}
-                                            {isReleasing || isProcessing ? 'RELEASING...' : 'RELEASE TO SELLER'}
+                                        <button onClick={handleReleaseFunds} disabled={isProcessing} className="w-full bg-white text-black font-black py-10 rounded-none text-5xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px] flex items-center justify-center gap-6">
+                                            {(isReleasing || isReleaseConfirming || activeAction === 'release' || isProcessing) && <LoadingSpinner size="h-12 w-12" />}
+                                            {isReleasing || isReleaseConfirming || activeAction === 'release' || isProcessing ? 'RELEASING...' : 'RELEASE TO SELLER'}
                                         </button>
-                                        <button onClick={handleDispute} disabled={isAnyTxPending || isProcessing} className="w-full py-6 text-zinc-500 hover:text-white font-black uppercase tracking-[0.2em] text-lg transition-all underline decoration-4 underline-offset-8 flex items-center justify-center gap-4">
-                                            {(isDisputing || isProcessing) && <LoadingSpinner size="h-5 w-5" />}
+                                        <button onClick={handleDispute} disabled={isProcessing} className="w-full py-6 text-zinc-500 hover:text-white font-black uppercase tracking-[0.2em] text-lg transition-all underline decoration-4 underline-offset-8 flex items-center justify-center gap-4">
+                                            {(isDisputing || isDisputeConfirming || activeAction === 'dispute' || isProcessing) && <LoadingSpinner size="h-5 w-5" />}
                                             OPEN DISPUTE
                                         </button>
                                     </div>
@@ -1035,6 +1081,7 @@ export default function DealClient({ dealId }: Props) {
                                             <button
                                                 onClick={() => {
                                                     setIsProcessing(true)
+                                                    setActiveAction('resolve')
                                                     handleTx(async () => {
                                                         try {
                                                             await resolveDispute({
@@ -1043,19 +1090,23 @@ export default function DealClient({ dealId }: Props) {
                                                                 functionName: 'resolve',
                                                                 args: [false]
                                                             })
+                                                        } catch (e) {
+                                                            setActiveAction(null)
+                                                            throw e
                                                         } finally {
                                                             setIsProcessing(false)
                                                         }
                                                     }, 'Ruling for Buyer...')
                                                 }}
-                                                disabled={isAnyTxPending || isProcessing}
+                                                disabled={isProcessing}
                                                 className="py-6 border-4 border-white hover:bg-white hover:text-black font-black uppercase tracking-widest transition-all flex items-center justify-center gap-4">
-                                                {(isResolving || isProcessing) && <LoadingSpinner />}
+                                                {(isResolving || isResolveConfirming || activeAction === 'resolve' || isProcessing) && <LoadingSpinner />}
                                                 WINNER: BUYER
                                             </button>
                                             <button
                                                 onClick={() => {
                                                     setIsProcessing(true)
+                                                    setActiveAction('resolve')
                                                     handleTx(async () => {
                                                         try {
                                                             await resolveDispute({
@@ -1064,14 +1115,17 @@ export default function DealClient({ dealId }: Props) {
                                                                 functionName: 'resolve',
                                                                 args: [true]
                                                             })
+                                                        } catch (e) {
+                                                            setActiveAction(null)
+                                                            throw e
                                                         } finally {
                                                             setIsProcessing(false)
                                                         }
                                                     }, 'Ruling for Seller...')
                                                 }}
-                                                disabled={isAnyTxPending || isProcessing}
+                                                disabled={isProcessing}
                                                 className="py-6 bg-white text-black hover:bg-zinc-200 font-black uppercase tracking-widest transition-all border-b-[8px] border-zinc-300 active:translate-y-1 active:border-b-[4px] flex items-center justify-center gap-4">
-                                                {(isResolving || isProcessing) && <LoadingSpinner />}
+                                                {(isResolving || isResolveConfirming || activeAction === 'resolve' || isProcessing) && <LoadingSpinner />}
                                                 WINNER: SELLER
                                             </button>
                                         </div>
