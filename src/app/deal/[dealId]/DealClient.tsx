@@ -227,7 +227,25 @@ function CharacterPeeker({ mousePos, isHovered, status, isProcessing }: { mouseP
     )
 }
 
+// ... inside generic component ...
 
+<Card title="PROTOCOL FEES">
+    <div className="flex flex-col md:flex-row justify-between items-center gap-16">
+        <p className="text-zinc-400 text-xl font-medium max-w-xl">Fully decentralized OTC trading. 3% commission when paying with TOWNS.</p>
+        <div className="flex items-center gap-8">
+            <div className="flex flex-col items-end">
+                <span className="text-green-500 font-black text-xs tracking-tighter animate-pulse mb-2 uppercase">Active System</span>
+                <div className="relative group/toggle flex items-center bg-zinc-950 border-4 border-zinc-800 p-1.5 rounded-full w-40 h-20 transition-all hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+                    <div className="absolute right-2 w-14 h-14 bg-green-500 rounded-full shadow-[0_0_15px_#22c55e] transition-transform" />
+                    <span className="ml-6 text-base font-black text-green-500 tracking-widest">ON</span>
+                </div>
+            </div>
+            <div className="px-12 py-6 border-4 border-white/10 text-white font-black uppercase tracking-widest text-4xl whitespace-nowrap bg-white/5 transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/10 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group rounded-xl">
+                $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all">TOWNS</span> 3%
+            </div>
+        </div>
+    </div>
+</Card>
 
 function Card({ children, title, className = "", showCharacter = false, status = "draft", isProcessing = false }: { children: React.ReactNode, title?: string, className?: string, showCharacter?: boolean, status?: string, isProcessing?: boolean }) {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
@@ -414,13 +432,10 @@ export default function DealClient({ dealId }: Props) {
                 if (data.escrow_address) {
                     setOnChainEscrow(data.escrow_address as `0x${string}`)
                 }
-                return data
             }
-            return null
         } catch (err) {
             if (showLoading) setError('Failed to load deal')
             console.error(err)
-            return null
         } finally {
             if (showLoading) setLoading(false)
         }
@@ -732,9 +747,7 @@ export default function DealClient({ dealId }: Props) {
             try {
                 setActiveAction('release')
                 setTxStatus('Requesting...')
-                // Force sync to ensure bot has latest address
-                const freshDeal = await loadDeal(false)
-                await requestTransaction(deal.deal_id, 'release', channelId || freshDeal?.channel_id || deal?.channel_id)
+                await requestTransaction(deal.deal_id, 'release', deal?.channel_id)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -744,8 +757,6 @@ export default function DealClient({ dealId }: Props) {
                 setTimeout(() => setTxStatus(null), 3000)
                 return
             }
-        } else {
-            console.log('[Towns] handleReleaseFunds: Skipping bot interaction', { isTowns, channelId, dealChannelId: deal?.channel_id })
         }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
@@ -794,9 +805,7 @@ export default function DealClient({ dealId }: Props) {
             try {
                 setActiveAction('dispute')
                 setTxStatus('Requesting...')
-                // Force sync
-                const freshDeal = await loadDeal(false)
-                await requestTransaction(deal.deal_id, 'dispute', channelId || freshDeal?.channel_id || deal?.channel_id)
+                await requestTransaction(deal.deal_id, 'dispute', deal?.channel_id)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -806,8 +815,6 @@ export default function DealClient({ dealId }: Props) {
                 setTimeout(() => setTxStatus(null), 3000)
                 return
             }
-        } else {
-            console.log('[Towns] handleDispute: Skipping bot interaction', { isTowns, channelId, dealChannelId: deal?.channel_id })
         }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
@@ -894,7 +901,16 @@ export default function DealClient({ dealId }: Props) {
             <GlobalInteractiveGrid status={deal.status} />
             <div className="bg-noise" />
 
-            {/* Header removed to use Global Header from layout.tsx */}
+            <header className="relative z-20 border-b-8 border-white bg-[#050505]">
+                <div className="max-w-[1400px] mx-auto px-10 py-8 flex justify-between items-center">
+                    <Link href="/" className="flex items-center gap-3 group">
+                        <span className="font-black text-4xl tracking-tighter text-white uppercase flex items-center gap-2">
+                            RONIN <span className="text-brand-gradient">OTC</span>
+                        </span>
+                    </Link>
+                    {/* Redundant ConnectButton removed to favor global header balance */}
+                </div>
+            </header>
 
             <main className="relative z-10 max-w-6xl mx-auto px-10 py-20 space-y-12 animate-[fadeIn_0.5s_ease-out] scale-down-pro">
                 <StatusStepper status={deal.status} />
