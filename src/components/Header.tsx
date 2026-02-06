@@ -3,15 +3,19 @@
 import { ConnectWallet } from './ConnectWallet'
 import { useAccount, useBalance } from 'wagmi'
 import { useEffect, useState } from 'react'
+import { useTowns } from '../context/TownsContext'
+import { USDC_ADDRESS } from '@/lib/contracts'
 
 export function Header() {
-    const { address, isConnected } = useAccount()
-    // Base USDC Address
-    const usdcAddress = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    const { townsAddress, isTowns } = useTowns()
+    const { address: wagmiAddress, isConnected } = useAccount()
+
+    // Priority for Towns users: use their real smart wallet address for balance display
+    const effectiveAddress = isTowns && townsAddress ? (townsAddress as `0x${string}`) : wagmiAddress
 
     const { data: balanceData } = useBalance({
-        address: address,
-        token: usdcAddress,
+        address: effectiveAddress,
+        token: USDC_ADDRESS,
         chainId: 8453, // Base
     })
 
