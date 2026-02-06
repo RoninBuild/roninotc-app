@@ -13,6 +13,73 @@ import { useTownsTransaction } from '@/hooks/useTownsTransaction'
 import type { Deal } from '@/lib/types'
 import Link from 'next/link'
 import MemberAvatar from '@/components/MemberAvatar'
+import { motion, AnimatePresence } from 'framer-motion'
+
+function StatusStepper({ status }: { status: string }) {
+    const steps = [
+        { id: '01', label: 'SETUP', key: 'draft' },
+        { id: '02', label: 'DEPOSIT', key: 'created' },
+        { id: '03', label: 'CLAIM', key: 'funded' },
+    ]
+
+    const currentIndex = steps.findIndex(s => s.key === status)
+    // If released/resolved, all steps are done
+    const isCompleted = status === 'released' || status === 'resolved' || status === 'refunded'
+
+    return (
+        <div className="flex items-center gap-6 font-industrial-mono text-xl tracking-tighter py-4 border-b border-white/10 mb-8 overflow-x-auto no-scrollbar">
+            {steps.map((step, index) => {
+                const isActive = step.key === status
+                const isPast = isCompleted || (currentIndex > index)
+
+                return (
+                    <div key={step.id} className="flex items-center gap-4 whitespace-nowrap">
+                        <div className={`flex items-center gap-2 ${isActive ? 'text-white' : isPast ? 'text-zinc-500' : 'text-zinc-700'}`}>
+                            <span className="opacity-50">{step.id}</span>
+                            <span className="font-black">{step.label}</span>
+                            {isActive && <span className="terminal-blink ml-1" />}
+                        </div>
+                        {index < steps.length - 1 && (
+                            <div className="text-zinc-800 font-black">
+                                {isPast ? (
+                                    <span className="text-matrix-green">{'>>>'}</span>
+                                ) : (
+                                    <span>{'>>>'}</span>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
+function ConsoleLog({ messages }: { messages: string[] }) {
+    return (
+        <div className="fixed bottom-10 left-10 right-10 z-[100] pointer-events-none">
+            <AnimatePresence>
+                {messages.map((msg, i) => (
+                    <motion.div
+                        key={`${msg}-${i}`}
+                        initial={{ x: -100, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                        className="mb-2"
+                    >
+                        <div className="bg-black border-2 border-white p-4 inline-flex items-center gap-4 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                            <div className="w-2 h-2 bg-white animate-pulse" />
+                            <span className="font-industrial-mono text-white text-lg font-black uppercase tracking-widest">
+                                {`> ${msg}`}
+                            </span>
+                        </div>
+                    </motion.div>
+                ))}
+            </AnimatePresence>
+        </div>
+    )
+}
 
 type Props = {
     dealId: string
@@ -57,7 +124,7 @@ function LoadingSpinner({ size = 'h-6 w-6' }: { size?: string }) {
     )
 }
 
-function GlobalInteractiveGrid() {
+function GlobalInteractiveGrid({ status }: { status: string }) {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
     useEffect(() => {
@@ -68,42 +135,33 @@ function GlobalInteractiveGrid() {
         return () => window.removeEventListener('mousemove', handleGlobalMouseMove)
     }, [])
 
+    const getGlowColor = () => {
+        if (status === 'disputed') return 'rgba(245, 158, 11, 0.15)'
+        if (status === 'released' || status === 'resolved') return 'rgba(34, 197, 94, 0.15)'
+        return 'rgba(168, 85, 247, 0.1)'
+    }
+
     return (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-            {/* Spotlight Effect */}
             <div
                 className="absolute inset-0 transition-opacity duration-300"
                 style={{
-                    background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(168, 85, 247, 0.08), transparent 60%)`
+                    background: `radial-gradient(1000px circle at ${mousePos.x}px ${mousePos.y}px, ${getGlowColor()}, transparent 70%)`
                 }}
             />
-
-            {/* Pulsing Grid Squares Overlay */}
-            <div className="absolute inset-0 opacity-[0.05]">
-                {[...Array(30)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="absolute bg-white/20 animate-pulse"
-                        style={{
-                            width: '40px',
-                            height: '40px',
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            animationDuration: `${3 + Math.random() * 7}s`,
-                            animationDelay: `${Math.random() * 5}s`,
-                            opacity: 0.1 + Math.random() * 0.4
-                        }}
-                    />
-                ))}
-            </div>
-            {/* Fine Grid */}
-            <div className="absolute inset-0 bg-grid opacity-[0.04]" />
+            <div className="absolute inset-0 bg-grid opacity-[0.03]" />
         </div>
     )
 }
 
-// Refined Eyes / Peeking Logic (Minimalist, Eyes Only)
-function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: number }, isHovered: boolean }) {
+// Refined Eyes / Peeking Logic (Ronin Industrial)
+function CharacterPeeker({ mousePos, isHovered, status, isProcessing }: { mousePos: { x: number, y: number }, isHovered: boolean, status: string, isProcessing: boolean }) {
+    const isError = status === 'disputed'
+    const isSuccess = status === 'released' || status === 'resolved'
+
+    // Matrix rain characters for eye scan
+    const matrixChars = "01".split("")
+
     return (
         <div className="absolute left-1/2 -top-[320px] -translate-x-1/2 w-[800px] h-[400px] pointer-events-none z-[-2] overflow-visible transition-all duration-700 flex flex-col items-center justify-end">
             <style jsx>{`
@@ -114,14 +172,19 @@ function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: nu
                 .ronin-breathe {
                     animation: breathe 8s infinite ease-in-out;
                 }
+                @keyframes eyeScan {
+                   0%, 100% { transform: translateX(-2px); }
+                   50% { transform: translateX(2px); }
+                }
+                .matrix-eye-rain {
+                    animation: matrixRain 1s linear infinite;
+                }
             `}</style>
 
             <div className="ronin-breathe relative w-full h-full flex items-center justify-center">
-                {/* White Aura Glow Behind - Dimmed */}
-                <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[220px] bg-white opacity-[0.03] blur-[100px] rounded-full z-[-1]" />
+                <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[220px] bg-white opacity-[0.02] blur-[100px] rounded-full z-[-1]" />
 
-                {/* Ronin Background Silhouette - High Contrast & Brighter for sword visibility */}
-                <div className="absolute inset-0 z-0 opacity-100 filter brightness-[2.4] contrast-[1.9]">
+                <div className={`absolute inset-0 z-0 opacity-100 filter brightness-[2.4] contrast-[1.9] transition-all duration-500 ${isError ? 'grayscale-[0.5] sepia-[0.2]' : ''}`}>
                     <img
                         src="/assets/ronin-bg.png"
                         alt="Ronin Background"
@@ -129,20 +192,35 @@ function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: nu
                     />
                 </div>
 
-                {/* Eyes Container - Aligned to the Ronin Silhouette */}
                 <div
                     className="absolute inset-0 z-10"
                     style={{
                         transform: `translate(${mousePos.x * 0.001}px, ${mousePos.y * 0.001}px)`,
                     }}
                 >
-                    {/* Glowing Purple Eyes - Larger and shifted to fully cover white spots */}
-                    <div
-                        className="absolute top-[48.2%] left-[44.4%] w-[32px] h-[7px] bg-[#A855F7] shadow-[0_0_15px_#A855F7,0_0_30px_rgba(168,85,247,0.8)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out]"
-                    />
-                    <div
-                        className="absolute top-[48.2%] left-[52.4%] w-[24px] h-[7px] bg-[#A855F7] shadow-[0_0_15px_#A855F7,0_0_30px_rgba(168,85,247,0.8)] rounded-[1px] animate-[blink_4s_infinite_ease-in-out] [animation-delay:0.2s]"
-                    />
+                    {/* LEFT EYE */}
+                    <div className={`absolute top-[48.2%] left-[44.4%] w-[32px] h-[7px] overflow-hidden transition-all duration-500
+                        ${isError ? 'bg-red-600 shadow-[0_0_20px_#dc2626]' : isSuccess ? 'bg-green-500 shadow-[0_0_20px_#22c55e]' : 'bg-[#A855F7] shadow-[0_0_15px_#A855F7]'}
+                        ${isProcessing ? 'animate-[eyeScan_0.5s_infinite]' : 'animate-[blink_6s_infinite]'}
+                    `}>
+                        {isProcessing && (
+                            <div className="flex flex-col text-[4px] font-industrial-mono text-white/50 matrix-eye-rain">
+                                {matrixChars.map((c, i) => <span key={i}>{c}</span>)}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* RIGHT EYE */}
+                    <div className={`absolute top-[48.2%] left-[52.4%] w-[24px] h-[7px] overflow-hidden transition-all duration-500
+                        ${isError ? 'bg-red-600 shadow-[0_0_20px_#dc2626]' : isSuccess ? 'bg-green-500 shadow-[0_0_20px_#22c55e]' : 'bg-[#A855F7] shadow-[0_0_15px_#A855F7]'}
+                        ${isProcessing ? 'animate-[eyeScan_0.5s_infinite]' : 'animate-[blink_6s_infinite]'}
+                    `}>
+                        {isProcessing && (
+                            <div className="flex flex-col text-[4px] font-industrial-mono text-white/50 matrix-eye-rain">
+                                {matrixChars.reverse().map((c, i) => <span key={i}>{c}</span>)}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -169,7 +247,7 @@ function CharacterPeeker({ mousePos, isHovered }: { mousePos: { x: number, y: nu
     </div>
 </Card>
 
-function Card({ children, title, className = "", showCharacter = false }: { children: React.ReactNode, title?: string, className?: string, showCharacter?: boolean }) {
+function Card({ children, title, className = "", showCharacter = false, status = "draft", isProcessing = false }: { children: React.ReactNode, title?: string, className?: string, showCharacter?: boolean, status?: string, isProcessing?: boolean }) {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
     const [isHovered, setIsHovered] = useState(false)
     const cardRef = useRef<HTMLDivElement>(null)
@@ -189,29 +267,19 @@ function Card({ children, title, className = "", showCharacter = false }: { chil
             onMouseMove={handleMouseMove}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`relative bg-[#09090b] border-industrial rounded-none p-10 overflow-visible group/card transition-transform duration-300 hover:scale-[1.005] ${className}`}
+            className={`relative bg-[#09090b] industrial-card rounded-none p-10 overflow-visible group/card transition-transform duration-300 hover:scale-[1.005] ${className} 
+                ${status === 'disputed' ? 'status-dispute' : (status === 'released' || status === 'resolved') ? 'status-success' : isProcessing ? 'status-action' : 'status-waiting'}
+            `}
         >
-            {/* Mouse reactive grid overlay */}
-            <div
-                className="absolute inset-0 pointer-events-none z-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300"
-                style={{
-                    backgroundImage: 'radial-gradient(400px circle at var(--x) var(--y), rgba(255,255,255,0.08), transparent 80%)',
-                    // @ts-ignore
-                    '--x': `${mousePos.x}px`,
-                    // @ts-ignore
-                    '--y': `${mousePos.y}px`
-                } as any}
-            />
+            {/* Mouse reactive grid overlay removed to favor industrial Card styles */}
             <div className="card-grid-glow opacity-30" />
 
             {/* Depth Container for Character - Only visible OUTSIDE the card (Peeking from top) */}
             {showCharacter && (
                 <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-[-1]">
-                    <CharacterPeeker mousePos={mousePos} isHovered={isHovered} />
+                    <CharacterPeeker mousePos={mousePos} isHovered={isHovered} status={status} isProcessing={isProcessing} />
                 </div>
             )}
-
-            {/* IN-CARD character visibility removed as requested */}
 
             <div className="relative z-10">
                 {title && (
@@ -232,6 +300,20 @@ export default function DealClient({ dealId }: Props) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [txStatus, setTxStatus] = useState<string | null>(null)
+    const [consoleMessages, setConsoleMessages] = useState<string[]>([])
+
+    const addConsoleMsg = (msg: string) => {
+        setConsoleMessages(prev => [...prev.slice(-2), msg])
+        setTimeout(() => {
+            setConsoleMessages(prev => prev.filter(m => m !== msg))
+        }, 3000)
+    }
+
+    // Wrap setTxStatus to also log to console
+    const notify = (msg: string | null) => {
+        setTxStatus(msg)
+        if (msg) addConsoleMsg(msg)
+    }
 
     // Towns Integration
     const { isTowns, channelId, identityAddress, townsAddress, townsUserId, setTownsAddress } = useTowns()
@@ -773,7 +855,7 @@ export default function DealClient({ dealId }: Props) {
 
     return (
         <div className="min-h-screen bg-[#050505] relative overflow-hidden font-sans pb-20">
-            <GlobalInteractiveGrid />
+            <GlobalInteractiveGrid status={deal.status} />
             <div className="bg-noise" />
 
             <header className="relative z-20 border-b-8 border-white bg-[#050505]">
@@ -787,15 +869,11 @@ export default function DealClient({ dealId }: Props) {
                 </div>
             </header>
 
-            <main className="relative z-10 max-w-6xl mx-auto px-10 py-20 space-y-20 animate-[fadeIn_0.5s_ease-out] scale-down-pro">
+            <main className="relative z-10 max-w-6xl mx-auto px-10 py-20 space-y-12 animate-[fadeIn_0.5s_ease-out] scale-down-pro">
+                <StatusStepper status={deal.status} />
 
-                {/* Transaction Status Banner */}
-                {(isAnyTxPending || !!txStatus) && (
-                    <div className="fixed top-32 right-10 z-50 bg-white text-black px-10 py-6 border-b-8 border-zinc-300 font-black uppercase tracking-tighter text-2xl flex items-center gap-6 shadow-2xl animate-[slideUp_0.3s_ease-out]">
-                        <div className="w-6 h-6 border-4 border-black/20 border-t-black rounded-full animate-spin" />
-                        <span>{txStatus || 'Processing...'}</span>
-                    </div>
-                )}
+                {/* Console Log Notifications (Silent & Tactile) */}
+                <ConsoleLog messages={consoleMessages} />
 
                 {/* DEBUG PANEL - Hidden but can be seen in console or toggled if needed */}
                 <div className="sr-only" aria-hidden="true">
@@ -809,11 +887,10 @@ export default function DealClient({ dealId }: Props) {
                             DEAL <span className="text-brand-gradient">SUMMARY</span>
                         </h1>
                         <div className="flex items-center justify-center md:justify-start gap-4">
-                            <p className="font-code text-zinc-500 text-2xl">ID: {deal.deal_id}</p>
+                            <p className="font-industrial-mono text-zinc-500 text-2xl tracking-tighter">ID: {deal.deal_id}</p>
                             <button onClick={() => {
                                 navigator.clipboard.writeText(deal.deal_id);
-                                setTxStatus('ID COPIED');
-                                setTimeout(() => setTxStatus(null), 2000);
+                                notify('ID_COPIED_TO_CLIPBOARD');
                             }} className="p-2 text-zinc-500 hover:text-white transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
@@ -845,7 +922,7 @@ export default function DealClient({ dealId }: Props) {
 
                 {/* Cards Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
-                    <Card title="PARTICIPANTS">
+                    <Card title="PARTICIPANTS" status={deal.status} isProcessing={isProcessing}>
                         <div className="space-y-12">
                             <div className="space-y-4">
                                 <label className="text-sm text-zinc-500 uppercase tracking-[0.3em] font-black ml-1">SELLER</label>
@@ -862,7 +939,7 @@ export default function DealClient({ dealId }: Props) {
                                             {deal.seller_display_name || 'SELLER'}
                                         </span>
                                     </div>
-                                    <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
+                                    <div className="bg-black border-[4px] border-white/20 p-6 font-industrial-mono text-xl text-white break-all relative group/addr">
                                         {/* Display Smart Account (F17) with a label if it's different from the User ID */}
                                         <div className="flex flex-col gap-1">
                                             <span>{deal.seller_address}</span>
@@ -873,8 +950,7 @@ export default function DealClient({ dealId }: Props) {
                                         <button
                                             onClick={() => {
                                                 navigator.clipboard.writeText(deal.seller_address);
-                                                setTxStatus('ADDRESS COPIED');
-                                                setTimeout(() => setTxStatus(null), 2000);
+                                                notify('ADDRESS_COPIED');
                                             }}
                                             className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover/addr:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-white"
                                         >
@@ -903,7 +979,7 @@ export default function DealClient({ dealId }: Props) {
                                             {deal.buyer_display_name || 'BUYER'}
                                         </span>
                                     </div>
-                                    <div className="bg-black border-[4px] border-white/20 p-6 font-code text-xl text-white break-all relative group/addr">
+                                    <div className="bg-black border-[4px] border-white/20 p-6 font-industrial-mono text-xl text-white break-all relative group/addr">
                                         {/* Display Smart Account (F17) with a label if it's different from the User ID */}
                                         <div className="flex flex-col gap-1">
                                             <span>{deal.buyer_address}</span>
@@ -914,8 +990,7 @@ export default function DealClient({ dealId }: Props) {
                                         <button
                                             onClick={() => {
                                                 navigator.clipboard.writeText(deal.buyer_address);
-                                                setTxStatus('ADDRESS COPIED');
-                                                setTimeout(() => setTxStatus(null), 2000);
+                                                notify('ADDRESS_COPIED');
                                             }}
                                             className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover/addr:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-white"
                                         >
@@ -932,19 +1007,19 @@ export default function DealClient({ dealId }: Props) {
                         </div>
                     </Card>
 
-                    <Card title="ASSET INFO">
+                    <Card title="ASSET INFO" status={deal.status} isProcessing={isProcessing}>
                         <div className="space-y-16">
                             <div className="space-y-4">
                                 <label className="text-sm text-zinc-500 uppercase tracking-[0.3em] font-black ml-1">TOTAL VALUE</label>
                                 <div className="flex items-baseline gap-6">
-                                    <span className="text-8xl font-black tracking-tighter text-white">{deal.amount}</span>
+                                    <span className="text-8xl font-black tracking-tighter text-white font-industrial-mono">{deal.amount}</span>
                                     <span className="text-3xl font-black text-zinc-500 uppercase tracking-widest">{deal.token}</span>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-10 pt-10 border-t-8 border-white/5">
                                 <div className="space-y-3">
                                     <label className="text-sm text-zinc-500 uppercase tracking-[0.3em] font-black">REMAINING</label>
-                                    <p className={`text-4xl font-black tracking-tighter ${isDeadlinePassed ? 'text-red-500' : 'text-white'}`}>
+                                    <p className={`text-4xl font-black tracking-tighter font-industrial-mono ${isDeadlinePassed ? 'text-red-500' : 'text-white'}`}>
                                         <CountdownTimer deadline={deal.deadline} />
                                     </p>
                                 </div>
@@ -959,13 +1034,28 @@ export default function DealClient({ dealId }: Props) {
                     </Card>
                 </div>
 
-                <Card title="TERMS & NOTES">
+                <Card title="TERMS & NOTES" status={deal.status} isProcessing={isProcessing}>
                     <p className="text-2xl text-zinc-300 leading-relaxed font-bold tracking-tight">
                         {deal.description || "No specific terms provided."}
                     </p>
                 </Card>
 
-                <Card title="EXECUTION" className="p-16 relative overflow-visible" showCharacter={true}>
+                <Card title="EXECUTION" className="p-16 relative overflow-hidden" showCharacter={true} status={deal.status} isProcessing={isProcessing}>
+                    {deal.status === 'released' && (
+                        <>
+                            <div className="scanline-effect" />
+                            <motion.div
+                                initial={{ scale: 2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ type: "spring", damping: 10, stiffness: 100 }}
+                                className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
+                            >
+                                <div className="border-[12px] border-matrix-green px-12 py-6 text-matrix-green text-8xl font-black -rotate-12 bg-black/80 shadow-[0_0_50px_rgba(34,197,94,0.5)]">
+                                    EXECUTED
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
                     <div className="space-y-12">
                         {deal.status === 'draft' && (
                             <div className="space-y-12">
@@ -1138,7 +1228,7 @@ export default function DealClient({ dealId }: Props) {
 
                 {/* Footer Fees */}
                 <div className="pt-20 space-y-20">
-                    <Card title="PROTOCOL FEES">
+                    <Card title="PROTOCOL FEES" status={deal.status} isProcessing={isProcessing}>
                         <div className="flex flex-col md:flex-row justify-between items-center gap-16">
                             <p className="text-zinc-400 text-xl font-medium max-w-xl">Fully decentralized OTC trading. 3% commission when paying with TOWNS.</p>
                             <div className="flex items-center gap-8">
@@ -1162,14 +1252,13 @@ export default function DealClient({ dealId }: Props) {
                             <div className="space-y-6">
                                 <label className="text-sm text-zinc-500 font-black uppercase tracking-[0.4em]">ON-CHAIN PROTOCOL ADDRESS</label>
                                 <div className="relative group/addr">
-                                    <a href={`https://basescan.org/address/${deal.escrow_address}`} target="_blank" rel="noopener noreferrer" className="font-code text-3xl text-white hover:text-zinc-300 break-all block leading-tight underline decoration-8 underline-offset-10">
+                                    <a href={`https://basescan.org/address/${deal.escrow_address}`} target="_blank" rel="noopener noreferrer" className="font-industrial-mono text-3xl text-white hover:text-zinc-300 break-all block leading-tight underline decoration-8 underline-offset-10">
                                         {deal.escrow_address}
                                     </a>
                                     <button
                                         onClick={() => {
                                             navigator.clipboard.writeText(deal.escrow_address!);
-                                            setTxStatus('CONTRACT COPIED');
-                                            setTimeout(() => setTxStatus(null), 2000);
+                                            notify('CONTRACT_COPIED');
                                         }}
                                         className="absolute -right-12 top-1/2 -translate-y-1/2 opacity-0 group-hover/addr:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-white"
                                     >
