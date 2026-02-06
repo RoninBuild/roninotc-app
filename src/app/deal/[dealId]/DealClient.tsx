@@ -48,6 +48,15 @@ function CountdownTimer({ deadline }: { deadline: number }) {
     return <span>{timeLeft}</span>
 }
 
+function LoadingSpinner({ size = 'h-6 w-6' }: { size?: string }) {
+    return (
+        <div className={`relative ${size} animate-spin`}>
+            <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full" />
+            <div className="absolute inset-0 border-4 border-t-purple-500 border-r-purple-600 border-b-transparent border-l-transparent rounded-full shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
+        </div>
+    )
+}
+
 function GlobalInteractiveGrid() {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
@@ -229,6 +238,7 @@ export default function DealClient({ dealId }: Props) {
     const { requestTransaction, isRequesting: isTownsTxPending } = useTownsTransaction()
 
     // On-chain state
+    const [isProcessing, setIsProcessing] = useState(false)
     const [onChainEscrow, setOnChainEscrow] = useState<`0x${string}` | null>(null)
     const [winnerAddr, setWinnerAddr] = useState<string | null>(null)
 
@@ -506,14 +516,21 @@ export default function DealClient({ dealId }: Props) {
         }
         if (!checkNetwork()) return
         if (!deal || !address) return
+        setIsProcessing(true)
         const amount = parseUsdcAmount(deal.amount)
         const memoHash = keccak256(toHex(deal.deal_id))
-        handleTx(() => createEscrow({
-            address: FACTORY_ADDRESS,
-            abi: factoryAbi,
-            functionName: 'createEscrow',
-            args: [deal.seller_address as `0x${string}`, USDC_ADDRESS, amount, BigInt(deal.deadline), ARBITRATOR_ADDRESS, memoHash],
-        }), 'Creating...')
+        handleTx(async () => {
+            try {
+                await createEscrow({
+                    address: FACTORY_ADDRESS,
+                    abi: factoryAbi,
+                    functionName: 'createEscrow',
+                    args: [deal.seller_address as `0x${string}`, USDC_ADDRESS, amount, BigInt(deal.deadline), ARBITRATOR_ADDRESS, memoHash],
+                })
+            } finally {
+                setIsProcessing(false)
+            }
+        }, 'Creating...')
     }
 
     const handleApproveUsdc = async () => {
@@ -532,13 +549,20 @@ export default function DealClient({ dealId }: Props) {
         }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
+        setIsProcessing(true)
         const amount = parseUsdcAmount(deal.amount)
-        handleTx(() => approveUsdc({
-            address: USDC_ADDRESS,
-            abi: erc20Abi,
-            functionName: 'approve',
-            args: [deal.escrow_address as `0x${string}`, amount],
-        }), 'Approving...')
+        handleTx(async () => {
+            try {
+                await approveUsdc({
+                    address: USDC_ADDRESS,
+                    abi: erc20Abi,
+                    functionName: 'approve',
+                    args: [deal.escrow_address as `0x${string}`, amount],
+                })
+            } finally {
+                setIsProcessing(false)
+            }
+        }, 'Approving...')
     }
 
     const handleFundEscrow = async () => {
@@ -557,11 +581,18 @@ export default function DealClient({ dealId }: Props) {
         }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
-        handleTx(() => fundEscrow({
-            address: deal.escrow_address as `0x${string}`,
-            abi: escrowAbi,
-            functionName: 'fund',
-        }), 'Funding...')
+        setIsProcessing(true)
+        handleTx(async () => {
+            try {
+                await fundEscrow({
+                    address: deal.escrow_address as `0x${string}`,
+                    abi: escrowAbi,
+                    functionName: 'fund',
+                })
+            } finally {
+                setIsProcessing(false)
+            }
+        }, 'Funding...')
     }
 
     const handleReleaseFunds = async () => {
@@ -580,21 +611,35 @@ export default function DealClient({ dealId }: Props) {
         }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
-        handleTx(() => releaseEscrow({
-            address: deal.escrow_address as `0x${string}`,
-            abi: escrowAbi,
-            functionName: 'release',
-        }), 'Releasing...')
+        setIsProcessing(true)
+        handleTx(async () => {
+            try {
+                await releaseEscrow({
+                    address: deal.escrow_address as `0x${string}`,
+                    abi: escrowAbi,
+                    functionName: 'release',
+                })
+            } finally {
+                setIsProcessing(false)
+            }
+        }, 'Releasing...')
     }
 
     const handleRefund = async () => {
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
-        handleTx(() => refundEscrow({
-            address: deal.escrow_address as `0x${string}`,
-            abi: escrowAbi,
-            functionName: 'refundAfterDeadline',
-        }), 'Refunding...')
+        setIsProcessing(true)
+        handleTx(async () => {
+            try {
+                await refundEscrow({
+                    address: deal.escrow_address as `0x${string}`,
+                    abi: escrowAbi,
+                    functionName: 'refundAfterDeadline',
+                })
+            } finally {
+                setIsProcessing(false)
+            }
+        }, 'Refunding...')
     }
 
     const handleDispute = async () => {
@@ -613,11 +658,18 @@ export default function DealClient({ dealId }: Props) {
         }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
-        handleTx(() => openDispute({
-            address: deal.escrow_address as `0x${string}`,
-            abi: escrowAbi,
-            functionName: 'openDispute',
-        }), 'Disputing...')
+        setIsProcessing(true)
+        handleTx(async () => {
+            try {
+                await openDispute({
+                    address: deal.escrow_address as `0x${string}`,
+                    abi: escrowAbi,
+                    functionName: 'openDispute',
+                })
+            } finally {
+                setIsProcessing(false)
+            }
+        }, 'Disputing...')
     }
 
     const isAnyTxPending = isCreating || isApproving || isFunding || isReleasing || isRefunding ||
@@ -884,8 +936,9 @@ export default function DealClient({ dealId }: Props) {
                                         SWITCH TO BASE
                                     </button>
                                 ) : isBuyer ? (
-                                    <button onClick={handleCreateEscrow} disabled={isAnyTxPending} className="w-full bg-white text-black font-black py-10 rounded-none text-4xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px]">
-                                        {isAnyTxPending ? 'INITIALIZING...' : 'DEPLOY ESCROW CONTRACT'}
+                                    <button onClick={handleCreateEscrow} disabled={isAnyTxPending || isProcessing} className="w-full bg-white text-black font-black py-10 rounded-none text-4xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px] flex items-center justify-center gap-6">
+                                        {(isAnyTxPending || isProcessing) && <LoadingSpinner size="h-10 w-10" />}
+                                        {isAnyTxPending || isProcessing ? 'INITIALIZING...' : 'DEPLOY ESCROW CONTRACT'}
                                     </button>
                                 ) : (
                                     <div className="p-12 bg-white/5 border-4 border-white/10 text-center">
@@ -908,11 +961,13 @@ export default function DealClient({ dealId }: Props) {
                                     </button>
                                 ) : isBuyer ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <button onClick={handleApproveUsdc} disabled={isAnyTxPending || !needsApproval} className={`py-8 px-10 border-4 font-black text-2xl uppercase tracking-widest transition-all ${!needsApproval ? 'border-zinc-800 text-zinc-600 bg-zinc-900 pointer-events-none' : 'border-white text-white hover:bg-white/10'}`}>
+                                        <button onClick={handleApproveUsdc} disabled={isAnyTxPending || !needsApproval || isProcessing} className={`py-8 px-10 border-4 font-black text-2xl uppercase tracking-widest transition-all flex items-center justify-center gap-4 ${!needsApproval ? 'border-zinc-800 text-zinc-600 bg-zinc-900 pointer-events-none' : 'border-white text-white hover:bg-white/10'}`}>
+                                            {(isApproving || isProcessing) && <LoadingSpinner />}
                                             {!needsApproval ? 'APPROVED' : '1. ALLOW USDC'}
                                         </button>
-                                        <button onClick={handleFundEscrow} disabled={isAnyTxPending || needsApproval} className="py-8 px-10 bg-white text-black hover:bg-zinc-200 disabled:opacity-50 font-black text-2xl uppercase tracking-widest transition-all border-b-[12px] border-zinc-300 active:translate-y-2 active:border-b-[6px]">
-                                            {isFunding ? 'FUNDING...' : '2. DEPOSIT FUNDS'}
+                                        <button onClick={handleFundEscrow} disabled={isAnyTxPending || needsApproval || isProcessing} className="py-8 px-10 bg-white text-black hover:bg-zinc-200 disabled:opacity-50 font-black text-2xl uppercase tracking-widest transition-all border-b-[12px] border-zinc-300 active:translate-y-2 active:border-b-[6px] flex items-center justify-center gap-4">
+                                            {(isFunding || isProcessing) && <LoadingSpinner />}
+                                            {isFunding || isProcessing ? 'FUNDING...' : '2. DEPOSIT FUNDS'}
                                         </button>
                                     </div>
                                 ) : (
@@ -934,10 +989,12 @@ export default function DealClient({ dealId }: Props) {
                                     </button>
                                 ) : isBuyer ? (
                                     <div className="space-y-6">
-                                        <button onClick={handleReleaseFunds} disabled={isAnyTxPending} className="w-full bg-white text-black font-black py-10 rounded-none text-5xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px]">
-                                            {isReleasing ? 'RELEASING...' : 'RELEASE TO SELLER'}
+                                        <button onClick={handleReleaseFunds} disabled={isAnyTxPending || isProcessing} className="w-full bg-white text-black font-black py-10 rounded-none text-5xl uppercase tracking-tighter hover:bg-zinc-200 transition-all border-b-[16px] border-zinc-300 active:translate-y-2 active:border-b-[8px] flex items-center justify-center gap-6">
+                                            {(isReleasing || isProcessing) && <LoadingSpinner size="h-12 w-12" />}
+                                            {isReleasing || isProcessing ? 'RELEASING...' : 'RELEASE TO SELLER'}
                                         </button>
-                                        <button onClick={handleDispute} disabled={isAnyTxPending} className="w-full py-6 text-zinc-500 hover:text-white font-black uppercase tracking-[0.2em] text-lg transition-all underline decoration-4 underline-offset-8">
+                                        <button onClick={handleDispute} disabled={isAnyTxPending || isProcessing} className="w-full py-6 text-zinc-500 hover:text-white font-black uppercase tracking-[0.2em] text-lg transition-all underline decoration-4 underline-offset-8 flex items-center justify-center gap-4">
+                                            {(isDisputing || isProcessing) && <LoadingSpinner size="h-5 w-5" />}
                                             OPEN DISPUTE
                                         </button>
                                     </div>
@@ -976,23 +1033,45 @@ export default function DealClient({ dealId }: Props) {
                                         <p className="text-orange-500 font-black uppercase tracking-widest text-xl mb-6">👮 ARBITRATOR CONTROLS</p>
                                         <div className="grid grid-cols-2 gap-8">
                                             <button
-                                                onClick={() => handleTx(() => resolveDispute({
-                                                    address: deal.escrow_address as `0x${string}`,
-                                                    abi: escrowAbi,
-                                                    functionName: 'resolve',
-                                                    args: [false]
-                                                }), 'Ruling for Buyer...')}
-                                                className="py-6 border-4 border-white hover:bg-white hover:text-black font-black uppercase tracking-widest transition-all">
+                                                onClick={() => {
+                                                    setIsProcessing(true)
+                                                    handleTx(async () => {
+                                                        try {
+                                                            await resolveDispute({
+                                                                address: deal.escrow_address as `0x${string}`,
+                                                                abi: escrowAbi,
+                                                                functionName: 'resolve',
+                                                                args: [false]
+                                                            })
+                                                        } finally {
+                                                            setIsProcessing(false)
+                                                        }
+                                                    }, 'Ruling for Buyer...')
+                                                }}
+                                                disabled={isAnyTxPending || isProcessing}
+                                                className="py-6 border-4 border-white hover:bg-white hover:text-black font-black uppercase tracking-widest transition-all flex items-center justify-center gap-4">
+                                                {(isResolving || isProcessing) && <LoadingSpinner />}
                                                 WINNER: BUYER
                                             </button>
                                             <button
-                                                onClick={() => handleTx(() => resolveDispute({
-                                                    address: deal.escrow_address as `0x${string}`,
-                                                    abi: escrowAbi,
-                                                    functionName: 'resolve',
-                                                    args: [true]
-                                                }), 'Ruling for Seller...')}
-                                                className="py-6 bg-white text-black hover:bg-zinc-200 font-black uppercase tracking-widest transition-all">
+                                                onClick={() => {
+                                                    setIsProcessing(true)
+                                                    handleTx(async () => {
+                                                        try {
+                                                            await resolveDispute({
+                                                                address: deal.escrow_address as `0x${string}`,
+                                                                abi: escrowAbi,
+                                                                functionName: 'resolve',
+                                                                args: [true]
+                                                            })
+                                                        } finally {
+                                                            setIsProcessing(false)
+                                                        }
+                                                    }, 'Ruling for Seller...')
+                                                }}
+                                                disabled={isAnyTxPending || isProcessing}
+                                                className="py-6 bg-white text-black hover:bg-zinc-200 font-black uppercase tracking-widest transition-all border-b-[8px] border-zinc-300 active:translate-y-1 active:border-b-[4px] flex items-center justify-center gap-4">
+                                                {(isResolving || isProcessing) && <LoadingSpinner />}
                                                 WINNER: SELLER
                                             </button>
                                         </div>
