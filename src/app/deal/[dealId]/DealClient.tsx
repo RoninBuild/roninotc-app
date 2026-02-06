@@ -299,6 +299,7 @@ export default function DealClient({ dealId }: Props) {
     const [deal, setDeal] = useState<Deal | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [isStatusHovered, setIsStatusHovered] = useState(false)
     const [txStatus, setTxStatus] = useState<string | null>(null)
     const [consoleMessages, setConsoleMessages] = useState<string[]>([])
 
@@ -915,8 +916,26 @@ export default function DealClient({ dealId }: Props) {
                             </button>
                         </div>
                     </div>
-                    <div className="px-12 py-8 bg-white text-black font-black text-5xl tracking-tighter uppercase italic border-b-[12px] border-zinc-400">
-                        {statusConfig.label}
+                    <div
+                        onMouseEnter={() => setIsStatusHovered(true)}
+                        onMouseLeave={() => setIsStatusHovered(false)}
+                        className="px-12 py-8 bg-white text-black font-black text-5xl tracking-tighter uppercase italic border-b-[12px] border-zinc-400 cursor-default transition-all duration-300 min-w-[300px] text-center"
+                    >
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={isStatusHovered ? 'info' : 'status'}
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                {isStatusHovered ? (
+                                    <span className="font-industrial-mono">{deal.amount} {deal.token}</span>
+                                ) : (
+                                    statusConfig.label
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
                 </div>
 
@@ -1040,9 +1059,9 @@ export default function DealClient({ dealId }: Props) {
                     </p>
                 </Card>
 
-                <Card title="EXECUTION" className="p-16 relative overflow-hidden" showCharacter={true} status={deal.status} isProcessing={isProcessing}>
+                <Card title="EXECUTION" className="p-16 relative overflow-visible" showCharacter={true} status={deal.status} isProcessing={isProcessing}>
                     {deal.status === 'released' && (
-                        <>
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
                             <div className="scanline-effect" />
                             <motion.div
                                 initial={{ scale: 2, opacity: 0 }}
@@ -1050,11 +1069,11 @@ export default function DealClient({ dealId }: Props) {
                                 transition={{ type: "spring", damping: 10, stiffness: 100 }}
                                 className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
                             >
-                                <div className="border-[12px] border-matrix-green px-12 py-6 text-matrix-green text-8xl font-black -rotate-12 bg-black/80 shadow-[0_0_50px_rgba(34,197,94,0.5)]">
+                                <div className="border-[12px] border-matrix-green px-12 py-6 text-matrix-green text-8xl font-black -rotate-12 bg-black/80 shadow-[0_0_50px_rgba(34,197,94,0.2)]">
                                     EXECUTED
                                 </div>
                             </motion.div>
-                        </>
+                        </div>
                     )}
                     <div className="space-y-12">
                         {deal.status === 'draft' && (
