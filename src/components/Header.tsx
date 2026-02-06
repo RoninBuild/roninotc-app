@@ -19,15 +19,23 @@ export function Header() {
         }
     }, [effectiveAddress, isTowns, townsAddress, wagmiAddress])
 
-    const { data: balanceData } = useBalance({
-        address: effectiveAddress,
+    // Prevent hydration mismatch
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => setMounted(true), [])
+
+    const { data: balanceData, refetch: refetchBalance } = useBalance({
+        address: effectiveAddress as `0x${string}`,
         token: USDC_ADDRESS,
         chainId: 8453, // Base
     })
 
-    // Prevent hydration mismatch
-    const [mounted, setMounted] = useState(false)
-    useEffect(() => setMounted(true), [])
+    // Auto-refresh balance more aggressively
+    useEffect(() => {
+        if (effectiveAddress && mounted) {
+            const interval = setInterval(() => refetchBalance(), 4000)
+            return () => clearInterval(interval)
+        }
+    }, [effectiveAddress, mounted, refetchBalance])
 
     return (
         <header className="fixed top-0 w-full z-50 bg-[#050505]/80 backdrop-blur-xl border-b-2 border-white/5 transition-all duration-300">

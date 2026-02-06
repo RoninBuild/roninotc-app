@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient, useSwitchChain } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient, useSwitchChain, useBalance } from 'wagmi'
 import { parseUnits, keccak256, toHex, zeroAddress } from 'viem'
 import { getDeal, updateDealStatus } from '@/lib/api'
 import { FACTORY_ADDRESS, USDC_ADDRESS, ARBITRATOR_ADDRESS, factoryAbi, escrowAbi, erc20Abi, parseUsdcAmount } from '@/lib/contracts'
@@ -326,6 +326,9 @@ export default function DealClient({ dealId }: Props) {
     const [onChainEscrow, setOnChainEscrow] = useState<`0x${string}` | null>(null)
     const [winnerAddr, setWinnerAddr] = useState<string | null>(null)
 
+    // Priority for Towns users: use their real smart wallet address for balance display
+    const effectiveAddress = isTowns && townsAddress ? (townsAddress as `0x${string}`) : address
+
     // Track status changes to clear activeAction for Towns
     const lastStatus = useRef(deal?.status)
     useEffect(() => {
@@ -510,7 +513,10 @@ export default function DealClient({ dealId }: Props) {
                         updateDealStatus(deal.deal_id, newStatus, onChainEscrow).catch(() => { })
                     }
                 }
-                refetchAllowance()
+                // Force allowance check on every sync cycle when in 'created' state
+                if (deal.status === 'created') {
+                    refetchAllowance()
+                }
             }
         } catch (err) { console.error('Sync error:', err) }
     }
@@ -584,6 +590,24 @@ export default function DealClient({ dealId }: Props) {
     const handleSwitchNetwork = () => {
         switchChain({ chainId: 8453 })
     }
+
+    // Prevent hydration mismatch
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => setMounted(true), [])
+
+    const { data: balanceData, refetch: refetchBalance } = useBalance({
+        address: effectiveAddress as `0x${string}`,
+        token: USDC_ADDRESS,
+        chainId: 8453, // Base
+    })
+
+    // Auto-refresh balance more aggressively
+    useEffect(() => {
+        if (effectiveAddress) {
+            const interval = setInterval(() => refetchBalance(), 5000)
+            return () => clearInterval(interval)
+        }
+    }, [effectiveAddress, refetchBalance])
 
     const checkNetwork = () => {
         if (isWrongNetwork) {
@@ -1256,11 +1280,10 @@ export default function DealClient({ dealId }: Props) {
                         <div className="flex flex-col md:flex-row justify-between items-center gap-16">
                             <div className="space-y-4">
                                 <h3 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none">
-                                    SECURITY <span className="text-brand-gradient">PROTOCOL</span>
+                                    ПРОТОКОЛ <span className="text-brand-gradient">ФИИ</span>
                                 </h3>
                                 <p className="text-zinc-500 text-xl font-medium max-w-xl italic">
-                                    Fully decentralized settlement security. Arbiter protection initialized.
-                                    Commission applied to target asset.
+                                    Вам не нужно беспокоиться о комиссии, она заплатится сама в токене TOWNS.
                                 </p>
                             </div>
                             <div className="flex items-center gap-8">
@@ -1271,19 +1294,19 @@ export default function DealClient({ dealId }: Props) {
                                     </div>
                                 </div>
                                 <div className="px-12 py-6 border-4 border-white/10 text-white font-black uppercase tracking-[-0.08em] text-4xl whitespace-nowrap bg-white/5 transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/10 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group rounded-xl">
-                                    $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all font-industrial-mono">TOWNS</span> 3%
+                                    $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all font-black text-5xl">TOWNS</span> 3%
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {deal.escrow_address && (
-                        <div className="border-[8px] border-white p-12 bg-[#09090b] relative group/contract">
-                            <div className="absolute top-0 right-10 -translate-y-1/2 bg-white text-black px-6 py-2 font-black uppercase text-sm tracking-widest">VERIFIED CONTRACT</div>
+                        <div className="border-2 border-white/10 p-12 bg-[#09090b] relative group/contract rounded-2xl overflow-hidden shadow-2xl">
+                            <div className="absolute top-0 right-10 -translate-y-1/2 bg-zinc-800 text-zinc-400 px-6 py-2 font-black uppercase text-xs tracking-widest border border-white/10">ПРОВЕРЕНО</div>
                             <div className="space-y-6">
-                                <label className="text-sm text-zinc-500 font-black uppercase tracking-[0.4em]">ON-CHAIN PROTOCOL ADDRESS</label>
+                                <label className="text-sm text-zinc-600 font-black uppercase tracking-[0.4em]">КОНТРАКТ СДЕЛКИ</label>
                                 <div className="relative group/addr">
-                                    <a href={`https://basescan.org/address/${deal.escrow_address}`} target="_blank" rel="noopener noreferrer" className="font-industrial-mono text-3xl text-white hover:text-zinc-300 break-all block leading-tight underline decoration-8 underline-offset-10">
+                                    <a href={`https://basescan.org/address/${deal.escrow_address}`} target="_blank" rel="noopener noreferrer" className="font-industrial-mono text-3xl text-zinc-300 hover:text-white break-all block leading-tight underline decoration-2 underline-offset-8 decoration-white/20 hover:decoration-white/50 transition-all">
                                         {deal.escrow_address}
                                     </a>
                                     <button
