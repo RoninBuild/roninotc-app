@@ -762,11 +762,17 @@ export default function DealClient({ dealId }: Props) {
             try {
                 setActiveAction('release')
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'release', deal?.channel_id)
+                // Force sync to ensure bot has latest address
+                const freshDeal = await loadDeal(false)
+                const targetChannelId = channelId || freshDeal?.channel_id || deal?.channel_id
+                console.log('[Towns] Requesting release with:', { dealId: deal.deal_id, channelId: targetChannelId })
+
+                await requestTransaction(deal.deal_id, 'release', targetChannelId)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
             } catch (e) {
+                console.error('[Towns] Release failed:', e)
                 setActiveAction(null)
                 setTxStatus('Failed')
                 setTimeout(() => setTxStatus(null), 3000)
@@ -820,11 +826,17 @@ export default function DealClient({ dealId }: Props) {
             try {
                 setActiveAction('dispute')
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'dispute', deal?.channel_id)
+                // Force sync
+                const freshDeal = await loadDeal(false)
+                const targetChannelId = channelId || freshDeal?.channel_id || deal?.channel_id
+                console.log('[Towns] Requesting dispute with:', { dealId: deal.deal_id, channelId: targetChannelId })
+
+                await requestTransaction(deal.deal_id, 'dispute', targetChannelId)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
             } catch (e) {
+                console.error('[Towns] Dispute failed:', e)
                 setActiveAction(null)
                 setTxStatus('Failed')
                 setTimeout(() => setTxStatus(null), 3000)
