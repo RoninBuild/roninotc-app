@@ -69,16 +69,6 @@ export function Header() {
                     <div className="flex items-center gap-4">
                         {mounted && isConnected && (
                             <div className="hidden md:flex items-center gap-3">
-                                {/* Signer Balance (The account currently connected) */}
-                                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#050505] rounded-lg border border-white/10 relative overflow-hidden group">
-                                    <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <span className="relative text-[8px] text-zinc-500 font-black tracking-widest uppercase">Signer</span>
-                                    <div className="relative flex items-center gap-1.5 text-white font-bold text-sm">
-                                        <SignerBalance address={wagmiAddress as `0x${string}`} />
-                                        <span className="text-zinc-500 font-black text-[10px]">USDC</span>
-                                    </div>
-                                </div>
-
                                 {/* Smart Wallet Balance (The Towns Smart Wallet) */}
                                 {isTowns && townsAddress && (
                                     <div className="flex items-center gap-2 px-4 py-2 bg-[#050505] rounded-xl border-2 border-blue-500/30 relative overflow-hidden group shadow-[0_0_20px_rgba(59,130,246,0.1)]">

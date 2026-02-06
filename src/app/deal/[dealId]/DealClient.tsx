@@ -227,25 +227,7 @@ function CharacterPeeker({ mousePos, isHovered, status, isProcessing }: { mouseP
     )
 }
 
-// ... inside generic component ...
 
-<Card title="PROTOCOL FEES">
-    <div className="flex flex-col md:flex-row justify-between items-center gap-16">
-        <p className="text-zinc-400 text-xl font-medium max-w-xl">Fully decentralized OTC trading. 3% commission when paying with TOWNS.</p>
-        <div className="flex items-center gap-8">
-            <div className="flex flex-col items-end">
-                <span className="text-green-500 font-black text-xs tracking-tighter animate-pulse mb-2 uppercase">Active System</span>
-                <div className="relative group/toggle flex items-center bg-zinc-950 border-4 border-zinc-800 p-1.5 rounded-full w-40 h-20 transition-all hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]">
-                    <div className="absolute right-2 w-14 h-14 bg-green-500 rounded-full shadow-[0_0_15px_#22c55e] transition-transform" />
-                    <span className="ml-6 text-base font-black text-green-500 tracking-widest">ON</span>
-                </div>
-            </div>
-            <div className="px-12 py-6 border-4 border-white/10 text-white font-black uppercase tracking-widest text-4xl whitespace-nowrap bg-white/5 transition-all duration-500 hover:border-green-500 hover:text-green-400 hover:bg-green-500/10 hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] group rounded-xl">
-                $ <span className="text-brand-gradient group-hover:from-green-400 group-hover:to-green-600 transition-all">TOWNS</span> 3%
-            </div>
-        </div>
-    </div>
-</Card>
 
 function Card({ children, title, className = "", showCharacter = false, status = "draft", isProcessing = false }: { children: React.ReactNode, title?: string, className?: string, showCharacter?: boolean, status?: string, isProcessing?: boolean }) {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
@@ -432,10 +414,13 @@ export default function DealClient({ dealId }: Props) {
                 if (data.escrow_address) {
                     setOnChainEscrow(data.escrow_address as `0x${string}`)
                 }
+                return data
             }
+            return null
         } catch (err) {
             if (showLoading) setError('Failed to load deal')
             console.error(err)
+            return null
         } finally {
             if (showLoading) setLoading(false)
         }
@@ -747,7 +732,9 @@ export default function DealClient({ dealId }: Props) {
             try {
                 setActiveAction('release')
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'release', deal?.channel_id)
+                // Force sync to ensure bot has latest address
+                const freshDeal = await loadDeal(false)
+                await requestTransaction(deal.deal_id, 'release', channelId || freshDeal?.channel_id || deal?.channel_id)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -757,6 +744,8 @@ export default function DealClient({ dealId }: Props) {
                 setTimeout(() => setTxStatus(null), 3000)
                 return
             }
+        } else {
+            console.log('[Towns] handleReleaseFunds: Skipping bot interaction', { isTowns, channelId, dealChannelId: deal?.channel_id })
         }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
@@ -805,7 +794,9 @@ export default function DealClient({ dealId }: Props) {
             try {
                 setActiveAction('dispute')
                 setTxStatus('Requesting...')
-                await requestTransaction(deal.deal_id, 'dispute', deal?.channel_id)
+                // Force sync
+                const freshDeal = await loadDeal(false)
+                await requestTransaction(deal.deal_id, 'dispute', channelId || freshDeal?.channel_id || deal?.channel_id)
                 setTxStatus('Request Sent! Check Chat')
                 setTimeout(() => setTxStatus(null), 5000)
                 return
@@ -815,6 +806,8 @@ export default function DealClient({ dealId }: Props) {
                 setTimeout(() => setTxStatus(null), 3000)
                 return
             }
+        } else {
+            console.log('[Towns] handleDispute: Skipping bot interaction', { isTowns, channelId, dealChannelId: deal?.channel_id })
         }
         if (!checkNetwork()) return
         if (!deal?.escrow_address) return
@@ -1316,10 +1309,10 @@ export default function DealClient({ dealId }: Props) {
                     </div>
 
                     {deal.escrow_address && (
-                        <div className="border-2 border-white/10 p-12 bg-[#09090b] relative group/contract rounded-2xl overflow-hidden shadow-2xl">
-                            <div className="absolute top-0 right-10 -translate-y-1/2 bg-zinc-800 text-zinc-400 px-6 py-2 font-black uppercase text-xs tracking-widest border border-white/10">VERIFIED</div>
+                        <div className="border-2 border-white/10 p-12 bg-[#09090b] relative group/contract rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 hover:border-green-500/50 hover:shadow-[0_0_40px_rgba(34,197,94,0.15)]">
+                            <div className="absolute top-0 right-10 -translate-y-1/2 bg-green-500 text-black px-6 py-2 font-black uppercase text-xs tracking-widest border-2 border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.5)] z-30">VERIFIED</div>
                             <div className="space-y-6">
-                                <label className="text-zinc-600 font-black uppercase tracking-[0.4em] text-sm">ESCROW CONTRACT</label>
+                                <label className="text-zinc-600 font-black uppercase tracking-[0.4em] text-sm group-hover/contract:text-green-500/50 transition-colors">ESCROW CONTRACT</label>
                                 <div className="relative group/addr">
                                     <a href={`https://basescan.org/address/${deal.escrow_address}`} target="_blank" rel="noopener noreferrer" className="font-industrial-mono text-3xl text-zinc-300 hover:text-white break-all block leading-tight underline decoration-2 underline-offset-8 decoration-white/20 hover:decoration-white/50 transition-all">
                                         {deal.escrow_address}
