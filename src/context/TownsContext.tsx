@@ -113,6 +113,10 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
                     setIdentityAddress(townsUser?.address || null)
                     setTownsUserId(townsUser?.userId || null)
 
+                    // Also try to get the wallet address from location/context directly as fallback
+                    const contextWallet = context.location?.walletAddress || context.walletAddress || townsUser?.address
+                    if (contextWallet) setTownsAddress(contextWallet)
+
                     // Robust identity fallback chain
                     const displayName = context.user?.displayName ||
                         context.user?.username ||
