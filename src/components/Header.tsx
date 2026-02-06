@@ -63,9 +63,14 @@ export function Header() {
                             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-[#050505] rounded-xl border-2 border-blue-500/30 relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-blue-500/10 blur-md group-hover:bg-blue-500/20 transition-all" />
                                 <span className="relative text-[10px] text-blue-200 font-bold tracking-wider uppercase mr-2">Base</span>
-                                <div className="relative flex items-center gap-1.5 text-white font-bold text-lg tracking-tight">
-                                    {Number(balanceData.formatted).toFixed(2)}
-                                    <span className="text-blue-400 font-black">USDC</span>
+                                <div className="relative flex flex-col">
+                                    <div className="flex items-center gap-1.5 text-white font-bold text-lg tracking-tight">
+                                        {Number(balanceData.formatted).toFixed(2)}
+                                        <span className="text-blue-400 font-black">USDC</span>
+                                    </div>
+                                    <span className="text-[6px] text-blue-300/50 font-mono truncate max-w-[100px]">
+                                        {effectiveAddress}
+                                    </span>
                                 </div>
                             </div>
                         )}
