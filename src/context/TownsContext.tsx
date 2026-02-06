@@ -8,7 +8,8 @@ import { useConnect, useAccount, useDisconnect } from 'wagmi'
 
 interface TownsContextType {
     isTowns: boolean
-    townsAddress: string | null // The Smart Wallet (from Provider)
+    townsAddress: string | null // The Smart Wallet (from Provider or Hint)
+    setTownsAddress: (addr: string | null) => void // Allow manual override from deal data
     identityAddress: string | null // The Identity ID (from Context)
     userDisplayName: string | null
     pfpUrl: string | null
@@ -23,6 +24,7 @@ interface TownsContextType {
 const TownsContext = createContext<TownsContextType>({
     isTowns: false,
     townsAddress: null,
+    setTownsAddress: () => { },
     identityAddress: null,
     userDisplayName: null,
     pfpUrl: null,
@@ -191,6 +193,7 @@ export function TownsProvider({ children }: { children: React.ReactNode }) {
         <TownsContext.Provider value={{
             isTowns,
             townsAddress,
+            setTownsAddress,
             identityAddress,
             userDisplayName,
             pfpUrl,

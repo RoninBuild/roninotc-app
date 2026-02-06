@@ -225,7 +225,7 @@ export default function DealClient({ dealId }: Props) {
     const [txStatus, setTxStatus] = useState<string | null>(null)
 
     // Towns Integration
-    const { isTowns, channelId } = useTowns()
+    const { isTowns, channelId, identityAddress, townsAddress, townsUserId, setTownsAddress } = useTowns()
     const { requestTransaction, isRequesting: isTownsTxPending } = useTownsTransaction()
 
     // On-chain state
@@ -250,8 +250,6 @@ export default function DealClient({ dealId }: Props) {
     const { isLoading: isDisputeConfirming, isSuccess: isDisputeSuccess } = useWaitForTransactionReceipt({ hash: disputeHash })
     const { isLoading: isResolveConfirming, isSuccess: isResolveSuccess } = useWaitForTransactionReceipt({ hash: resolveHash })
 
-    // Use identityAddress from TownsContext as a fallback/secondary check if available
-    const { identityAddress, townsAddress, townsUserId } = useTowns()
 
     // Cross-matching: check wallet (address) and towns identity (identityAddress/userId)
     // against both DB stored address (usually F17) and user_id (usually 063)
@@ -296,6 +294,16 @@ export default function DealClient({ dealId }: Props) {
             syncBlockchainState()
         }
     }, [isApproveSuccess, isFundSuccess, deal?.status])
+
+    // Force TownsContext to use the deal's smart wallet address if we are the buyer
+    useEffect(() => {
+        if (isTowns && isBuyer && deal?.buyer_address) {
+            if (deal.buyer_address.toLowerCase() !== townsAddress?.toLowerCase()) {
+                console.log('Towns: Forcing smart wallet address from deal:', deal.buyer_address)
+                setTownsAddress(deal.buyer_address)
+            }
+        }
+    }, [isTowns, isBuyer, deal?.buyer_address, townsAddress, setTownsAddress])
 
     // Logic Functions
     const loadDeal = async (showLoading = true) => {
