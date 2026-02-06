@@ -374,6 +374,21 @@ export default function DealClient({ dealId }: Props) {
         (townsAddress?.toLowerCase() === deal?.buyer_address?.toLowerCase()) ||
         (townsUserId?.toLowerCase() === deal?.buyer_user_id?.toLowerCase())
 
+    // Debug logging for button visibility
+    useEffect(() => {
+        if (deal) {
+            console.log('[Button Debug]', {
+                status: deal.status,
+                isBuyer,
+                isSeller,
+                address,
+                townsAddress,
+                buyerAddress: deal.buyer_address,
+                sellerAddress: deal.seller_address
+            })
+        }
+    }, [deal?.status, isBuyer, isSeller, address, townsAddress])
+
     // Blockchain Reads (Dual Allowance Scan)
     const { data: allowanceSigner, refetch: refetchAllowanceSigner } = useReadContract({
         address: USDC_ADDRESS,
@@ -1332,7 +1347,7 @@ export default function DealClient({ dealId }: Props) {
 
                     {deal.escrow_address && (
                         <div className="border-2 border-white/10 p-12 bg-[#09090b] relative group/contract rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 hover:border-green-500/50 hover:shadow-[0_0_40px_rgba(34,197,94,0.15)]">
-                            <div className="absolute top-0 right-10 -translate-y-1/2 bg-green-500 text-black px-6 py-2 font-black uppercase text-xs tracking-widest border-2 border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.5)] z-30">VERIFIED</div>
+                            <div className="absolute -top-6 right-10 bg-green-500 text-black px-6 py-2 font-black uppercase text-xs tracking-widest border-2 border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.5)] z-30">VERIFIED</div>
                             <div className="space-y-6">
                                 <label className="text-zinc-600 font-black uppercase tracking-[0.4em] text-sm group-hover/contract:text-green-500/50 transition-colors">ESCROW CONTRACT</label>
                                 <div className="relative group/addr">
